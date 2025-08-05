@@ -15,12 +15,6 @@ const userSchema = new mongoose.Schema(
 			type: String,
 			required: true,
 		},
-		userType: {
-			type: String,
-			required: true,
-			enum: ['ngo', 'individual', 'restaurant'],
-			default: 'individual'
-		},
 		lastLogin: {
 			type: Date,
 			default: Date.now,
