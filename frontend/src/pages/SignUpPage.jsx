@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { User, Mail, Lock, Loader, Users } from "lucide-react";
+import { User, Mail, Lock, Loader } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Input from "../components/Input";
 import { useAuthStore } from "../store/authStore";
@@ -10,7 +10,6 @@ const SignUpPage = () => {
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
-	const [userType, setUserType] = useState("Individual");
 	const navigate = useNavigate();
 
 	const { signup, error, isLoading } = useAuthStore();
@@ -19,15 +18,7 @@ const SignUpPage = () => {
 		e.preventDefault();
 
 		try {
-			// Convert userType to lowercase to match backend enum
-			const userTypeMapping = {
-				'Individual': 'individual',
-				'Restaurant': 'restaurant', 
-				'NGO': 'ngo'
-			};
-			const mappedUserType = userTypeMapping[userType] || userType.toLowerCase();
-			
-			await signup(email, password, name, mappedUserType);
+			await signup(email, password, name);
 			navigate("/");
 		} catch (error) {
 			console.log(error);
@@ -69,21 +60,6 @@ const SignUpPage = () => {
 							value={password}
 							onChange={(e) => setPassword(e.target.value)}
 						/>
-						
-						<div className='relative mb-6'>
-							<div className='absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none'>
-								<Users className='size-5 text-green-500' />
-							</div>
-							<select
-								value={userType}
-								onChange={(e) => setUserType(e.target.value)}
-								className='w-full pl-10 pr-3 py-2 bg-gray-50 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-500 text-gray-900 transition duration-200'
-							>
-								<option value="Individual">Individual</option>
-								<option value="NGO">NGO</option>
-								<option value="Restaurant">Restaurant</option>
-							</select>
-						</div>
 
 						{error && <p className='text-red-500 font-semibold mt-2'>{error}</p>}
 						<PasswordStrengthMeter password={password} />
