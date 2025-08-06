@@ -1,177 +1,287 @@
-import { useEffect } from "react";
-import { useAuthStore } from "../store/authStore";
-import { motion } from "framer-motion";
-import { User, LogOut, Activity, TrendingUp, DollarSign, Target } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect } from 'react';
+import { Line, Doughnut } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+} from 'chart.js';
+import { useFitnessStore } from '../store/fitnessStore';
+import { useAuthStore } from '../store/authStore';
+import { useNavigate } from 'react-router-dom';
+import { DollarSign, TrendingUp, Target, Activity, Heart, Scale } from 'lucide-react';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement
+);
 
 const Dashboard = () => {
-	const { user, logout, checkAuth, isLoading } = useAuthStore();
-	const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const navigate = useNavigate();
+  const { 
+    userInfo, 
+    fetchUserInfo, 
+    getBMICategory, 
+    getCalorieBalance, 
+    getDailyProgress,
+    isLoading,
+    error
+  } = useFitnessStore();
 
-	useEffect(() => {
-		checkAuth();
-	}, [checkAuth]);
+  useEffect(() => {
+    const loadUserInfo = async () => {
+      console.log('Dashboard - Loading user info...');
+      const result = await fetchUserInfo();
+      
+      // If fetchUserInfo returns null or gets a 404, it means no profile exists
+      if (result === null) {
+        console.log('Dashboard - No user profile found, redirecting to profile setup');
+        navigate('/profile-setup', { replace: true });
+      }
+    };
+    
+    loadUserInfo();
+  }, [fetchUserInfo, navigate]);
 
-	const handleLogout = async () => {
-		try {
-			await logout();
-			navigate("/login");
-		} catch (error) {
-			console.error("Logout failed:", error);
-		}
-	};
+  if (isLoading && !userInfo) {
+    console.log('Dashboard - Loading user info...');
+    return (
+      <div className="p-6 flex items-center justify-center min-h-96">
+        <div className="loading loading-spinner loading-lg text-primary"></div>
+      </div>
+    );
+  }
 
-	if (isLoading) {
-		return (
-			<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
-				<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-			</div>
-		);
-	}
+  if (!userInfo) {
+    console.log('Dashboard - No user info, showing setup prompt');
+    return (
+      <div className="p-6">
+        <div className="alert alert-info">
+          <span>Complete your profile setup to view your dashboard.</span>
+        </div>
+      </div>
+    );
+  }
 
-	return (
-		<div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
-			<div className="max-w-6xl mx-auto">
-				<motion.div
-					initial={{ opacity: 0, y: 20 }}
-					animate={{ opacity: 1, y: 0 }}
-					transition={{ duration: 0.5 }}
-					className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200 overflow-hidden"
-				>
-					<div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-6">
-						<div className="flex items-center justify-between">
-							<div className="flex items-center space-x-3">
-								<User className="size-8" />
-								<div>
-									<h1 className="text-2xl font-bold">Welcome to SyncUp!</h1>
-									<p className="text-purple-100">Hello, {user?.name}</p>
-								</div>
-							</div>
-							<button
-								onClick={handleLogout}
-								className="flex items-center space-x-2 bg-purple-700 hover:bg-purple-800 px-4 py-2 rounded-lg transition-colors"
-							>
-								<LogOut className="size-4" />
-								<span>Logout</span>
-							</button>
-						</div>
-					</div>
+  console.log('Dashboard - Rendering with user info:', userInfo);
 
-					<div className="p-6">
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-							<div className="bg-gray-50 rounded-lg p-4">
-								<h3 className="text-lg font-semibold text-gray-800 mb-2">Profile</h3>
-								<div className="space-y-2">
-									<p><span className="font-medium">Name:</span> {user?.name}</p>
-									<p><span className="font-medium">Email:</span> {user?.email}</p>
-									<p><span className="font-medium">Member Since:</span> {new Date(user?.createdAt).toLocaleDateString()}</p>
-									{user?.lastLogin && (
-										<p><span className="font-medium">Last Login:</span> {new Date(user?.lastLogin).toLocaleString()}</p>
-									)}
-								</div>
-							</div>
+  const bmiInfo = userInfo.bmi ? getBMICategory(userInfo.bmi) : null;
+  const calorieBalance = getCalorieBalance();
+  const dailyProgress = getDailyProgress();
 
-							<div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg p-4">
-								<h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-									<Activity className="mr-2 text-purple-600" size={20} />
-									Fitness Tracking
-								</h3>
-								<div className="space-y-3">
-									<button className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors">
-										Log Workout
-									</button>
-									<button className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
-										Track Progress
-									</button>
-									<button className="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">
-										Set Fitness Goals
-									</button>
-								</div>
-							</div>
+  // Mock weekly data for charts (in real app, this would come from backend)
+  const weeklyCalorieData = {
+    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    datasets: [
+      {
+        label: 'Calorie Intake',
+        data: [
+          userInfo.caloriesIntake * 0.95, 
+          userInfo.caloriesIntake * 1.02, 
+          userInfo.caloriesIntake * 0.88, 
+          userInfo.caloriesIntake * 1.15, 
+          userInfo.caloriesIntake * 0.92, 
+          userInfo.caloriesIntake * 1.08, 
+          userInfo.caloriesIntake * 0.97
+        ],
+        borderColor: 'rgb(34, 197, 94)',
+        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        tension: 0.4,
+      },
+      {
+        label: 'Target',
+        data: Array(7).fill(userInfo.caloriesIntake),
+        borderColor: 'rgb(239, 68, 68)',
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        borderDash: [5, 5],
+        tension: 0.4,
+      },
+    ],
+  };
 
-							<div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4">
-								<h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-									<TrendingUp className="mr-2 text-green-600" size={20} />
-									Wellness
-								</h3>
-								<div className="space-y-3">
-									<button className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">
-										Mood Tracker
-									</button>
-									<button className="w-full bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 transition-colors">
-										Sleep Log
-									</button>
-									<button className="w-full bg-teal-600 text-white py-2 px-4 rounded-lg hover:bg-teal-700 transition-colors">
-										Nutrition Diary
-									</button>
-								</div>
-							</div>
+  const exerciseProgressData = {
+    labels: ['Completed', 'Remaining'],
+    datasets: [
+      {
+        data: [dailyProgress.exercise, 100 - dailyProgress.exercise],
+        backgroundColor: ['#22c55e', '#e5e7eb'],
+        borderWidth: 0,
+      },
+    ],
+  };
 
-							<div className="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-lg p-4">
-								<h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-									<DollarSign className="mr-2 text-orange-600" size={20} />
-									Expense Tracking
-								</h3>
-								<div className="space-y-3">
-									<button className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition-colors">
-										Add Expense
-									</button>
-									<button className="w-full bg-yellow-600 text-white py-2 px-4 rounded-lg hover:bg-yellow-700 transition-colors">
-										View Budget
-									</button>
-									<button className="w-full bg-amber-600 text-white py-2 px-4 rounded-lg hover:bg-amber-700 transition-colors">
-										Monthly Report
-									</button>
-								</div>
-							</div>
+  const monthlyBudgetData = {
+    labels: ['Used', 'Remaining'],
+    datasets: [
+      {
+        data: [0, userInfo.monthlyBudget], // No expenses yet for new user
+        backgroundColor: ['#f59e0b', '#22c55e'],
+        borderWidth: 0,
+      },
+    ],
+  };
 
-							<div className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-lg p-4">
-								<h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-									<Target className="mr-2 text-pink-600" size={20} />
-									Goals & Habits
-								</h3>
-								<div className="space-y-3">
-									<button className="w-full bg-pink-600 text-white py-2 px-4 rounded-lg hover:bg-pink-700 transition-colors">
-										Set New Goal
-									</button>
-									<button className="w-full bg-rose-600 text-white py-2 px-4 rounded-lg hover:bg-rose-700 transition-colors">
-										Track Habits
-									</button>
-									<button className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors">
-										View Progress
-									</button>
-								</div>
-							</div>
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+        },
+      },
+      x: {
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+        },
+      },
+    },
+  };
 
-							<div className="bg-gray-50 rounded-lg p-4">
-								<h3 className="text-lg font-semibold text-gray-800 mb-3">Quick Actions</h3>
-								<div className="space-y-3">
-									<button className="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors">
-										Edit Profile
-									</button>
-									<button className="w-full bg-slate-600 text-white py-2 px-4 rounded-lg hover:bg-slate-700 transition-colors">
-										Settings
-									</button>
-									<button className="w-full bg-zinc-600 text-white py-2 px-4 rounded-lg hover:bg-zinc-700 transition-colors">
-										Help & Support
-									</button>
-								</div>
-							</div>
-						</div>
+  const doughnutOptions = {
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+    },
+  };
 
-						<div className="mt-6 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
-							<h3 className="text-lg font-semibold text-purple-800 mb-2">🎉 Welcome to Your Wellness Journey!</h3>
-							<p className="text-purple-700">
-								You've successfully joined SyncUp! Start tracking your fitness, monitor your wellness, 
-								manage your expenses, and achieve your personal goals all in one place. 
-								Your path to a healthier and more organized lifestyle begins now!
-							</p>
-						</div>
-					</div>
-				</motion.div>
-			</div>
-		</div>
-	);
+  return (
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-base-content">
+          Welcome back, {user?.name}! 👋
+        </h1>
+        <p className="text-base-content/70 mt-2">Here's your fitness and wellness overview</p>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="stat bg-base-200 rounded-lg shadow">
+          <div className="stat-figure text-primary">
+            <Scale size={24} />
+          </div>
+          <div className="stat-title">Current Weight</div>
+          <div className="stat-value text-primary">{userInfo.weight} kg</div>
+          {userInfo.bmi && (
+            <div className={`stat-desc ${bmiInfo?.color}`}>
+              BMI: {userInfo.bmi.toFixed(1)} ({bmiInfo?.category})
+            </div>
+          )}
+        </div>
+
+        <div className="stat bg-base-200 rounded-lg shadow">
+          <div className="stat-figure text-secondary">
+            <Activity size={24} />
+          </div>
+          <div className="stat-title">Exercise Goal</div>
+          <div className="stat-value text-secondary">{userInfo.exerciseMinutes} min</div>
+          <div className="stat-desc">{dailyProgress.exercise.toFixed(0)}% completed today</div>
+        </div>
+
+        <div className="stat bg-base-200 rounded-lg shadow">
+          <div className="stat-figure text-accent">
+            <Heart size={24} />
+          </div>
+          <div className="stat-title">Calorie Target</div>
+          <div className="stat-value text-accent">{userInfo.caloriesIntake}</div>
+          <div className="stat-desc">
+            {calorieBalance > 0 ? `+${calorieBalance}` : calorieBalance} cal balance
+          </div>
+        </div>
+
+        <div className="stat bg-base-200 rounded-lg shadow">
+          <div className="stat-figure text-warning">
+            <DollarSign size={24} />
+          </div>
+          <div className="stat-title">Monthly Budget</div>
+          <div className="stat-value text-warning">${userInfo.monthlyBudget}</div>
+          <div className="stat-desc">${userInfo.monthlyBudget} remaining</div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Calorie Intake Chart */}
+        <div className="card bg-base-200 shadow-xl">
+          <div className="card-body">
+            <h2 className="card-title text-lg">Weekly Calorie Intake</h2>
+            <div className="h-64">
+              <Line data={weeklyCalorieData} options={chartOptions} />
+            </div>
+          </div>
+        </div>
+
+        {/* Exercise Progress */}
+        <div className="card bg-base-200 shadow-xl">
+          <div className="card-body">
+            <h2 className="card-title text-lg">Today's Exercise Progress</h2>
+            <div className="h-64 flex items-center justify-center">
+              <div className="w-48 h-48">
+                <Doughnut data={exerciseProgressData} options={doughnutOptions} />
+              </div>
+            </div>
+            <div className="text-center mt-4">
+              <div className="text-2xl font-bold">{dailyProgress.exercise.toFixed(0)}%</div>
+              <div className="text-base-content/70">of daily goal completed</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        {/* Recent Transactions */}
+        <div className="card bg-base-200 shadow-xl">
+          <div className="card-body">
+            <h2 className="card-title text-lg">Recent Transactions</h2>
+            <div className="flex flex-col items-center justify-center h-48">
+              <div className="text-6xl mb-4">💳</div>
+              <div className="text-center">
+                <div className="text-lg font-semibold text-base-content/70">No recent transactions</div>
+                <div className="text-sm text-base-content/50 mt-1">Your expenses will appear here</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Goal Tracker */}
+        <div className="card bg-base-200 shadow-xl lg:col-span-2">
+          <div className="card-body">
+            <h2 className="card-title text-lg">Goal Tracker</h2>
+            <div className="flex flex-col items-center justify-center h-48">
+              <div className="text-center">
+                <div className="text-lg font-semibold text-base-content/70">No goals set yet</div>
+                <div className="text-sm text-base-content/50 mt-1">Start by adding your first goal</div>
+              </div>
+            </div>
+            <div className="flex justify-center mt-4">
+              <button className="btn btn-circle btn-primary">
+                <span className="text-lg">+</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default Dashboard;

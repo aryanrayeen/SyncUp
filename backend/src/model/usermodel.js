@@ -15,6 +15,14 @@ const userSchema = new mongoose.Schema(
 			type: String,
 			required: true,
 		},
+		phone: {
+			type: String,
+			default: '',
+		},
+		location: {
+			type: String,
+			default: '',
+		},
 		lastLogin: {
 			type: Date,
 			default: Date.now,

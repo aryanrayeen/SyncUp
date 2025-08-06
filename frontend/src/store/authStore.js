@@ -1,9 +1,8 @@
 import { create } from "zustand";
-import axios from "axios";
+import api from "../lib/axios";
+import { useProfileStore } from "./profileStore";
 
-const API_URL = import.meta.env.MODE === "development" ? "http://localhost:3004/api/auth" : "/api/auth";
-
-axios.defaults.withCredentials = true;
+const API_URL = "/auth";
 
 export const useAuthStore = create((set) => ({
     user: null,
@@ -15,7 +14,7 @@ export const useAuthStore = create((set) => ({
     signup: async (email, password, name) => {
         set({ isLoading: true, error: null });
         try {
-            const response = await axios.post(`${API_URL}/signup`, { email, password, name });
+            const response = await api.post(`${API_URL}/signup`, { email, password, name });
             set({ user: response.data.user, isAuthenticated: true, isLoading: false });
         } catch (error) {
             set({ error: error.response?.data?.message || "Error signing up", isLoading: false });
@@ -26,10 +25,10 @@ export const useAuthStore = create((set) => ({
     login: async (email, password) => {
         set({ isLoading: true, error: null });
         try {
-            const response = await axios.post(`${API_URL}/login`, { email, password });
+            const response = await api.post(`${API_URL}/login`, { email, password });
 
-            console.log("✅ Login response:", response); // 👈 added
-            console.log("✅ Response data:", response.data); // 👈 added
+            console.log("Login response:", response); // added
+            console.log("Response data:", response.data); // added
 
             set({
                 isAuthenticated: true,
@@ -37,8 +36,11 @@ export const useAuthStore = create((set) => ({
                 error: null,
                 isLoading: false,
             });
+            
+            // Reset profile store when user logs in to ensure fresh profile check
+            useProfileStore.getState().reset();
         } catch (error) {
-            console.error("❌ Login error:", error.response?.data || error.message); // 👈 added
+            console.error("Login error:", error.response?.data || error.message); // added
             set({ error: error.response?.data?.message || "Error logging in", isLoading: false });
             throw error;
         }
@@ -47,8 +49,10 @@ export const useAuthStore = create((set) => ({
     logout: async () => {
         set({ isLoading: true, error: null });
         try {
-            await axios.post(`${API_URL}/logout`);
+            await api.post(`${API_URL}/logout`);
             set({ user: null, isAuthenticated: false, error: null, isLoading: false });
+            // Reset profile store when user logs out
+            useProfileStore.getState().reset();
         } catch (error) {
             set({ error: "Error logging out", isLoading: false });
             throw error;
@@ -58,7 +62,7 @@ export const useAuthStore = create((set) => ({
     checkAuth: async () => {
         set({ isLoading: true, error: null });
         try {
-            const response = await axios.get(`${API_URL}/check-auth`);
+            const response = await api.get(`${API_URL}/check-auth`);
             set({
                 user: response.data.user,
                 isAuthenticated: true,
@@ -66,6 +70,31 @@ export const useAuthStore = create((set) => ({
             });
         } catch (error) {
             set({ error: null, isLoading: false, isAuthenticated: false });
+            // Reset profile store when auth check fails
+            useProfileStore.getState().reset();
+        }
+    },
+
+    updateUserProfile: async (profileData) => {
+        set({ isLoading: true, error: null });
+        try {
+            console.log('Updating user profile:', profileData);
+            const response = await api.put(`${API_URL}/profile`, profileData);
+            console.log('Profile updated successfully:', response.data);
+            
+            // Update the user state with the new data
+            set((state) => ({
+                user: { ...state.user, ...response.data.data },
+                isLoading: false,
+                error: null
+            }));
+            
+            return response.data.data;
+        } catch (error) {
+            console.error('Error updating user profile:', error);
+            const errorMessage = error.response?.data?.message || 'Failed to update profile';
+            set({ error: errorMessage, isLoading: false });
+            throw error;
         }
     },
 

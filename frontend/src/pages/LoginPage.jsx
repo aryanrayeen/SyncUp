@@ -4,6 +4,7 @@ import { Mail, Lock, Loader } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Input from "../components/Input";
 import { useAuthStore } from "../store/authStore";
+import api from "../lib/axios";
 
 const LoginPage = () => {
 	const [email, setEmail] = useState("");
@@ -17,22 +18,22 @@ const LoginPage = () => {
 
 		try {
 			await login(email, password);
-			navigate("/");
+			navigate("/dashboard");
 		} catch (error) {
 			console.log(error);
 		}
 	};
 
 	return (
-		<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-green-50 p-4">
+		<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-lime-100 via-yellow-50 to-green-100 p-4" data-theme="acid">
 			<motion.div
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ duration: 0.5 }}
-				className='max-w-md w-full bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200 overflow-hidden'
+				className='max-w-md w-full bg-base-100 backdrop-blur-xl rounded-2xl shadow-2xl border border-lime-200 overflow-hidden'
 			>
 				<div className='p-8'>
-					<h2 className='text-3xl font-bold mb-6 text-center text-green-600'>
+					<h2 className='text-3xl font-bold mb-6 text-center text-primary'>
 						Welcome Back
 					</h2>
 
@@ -53,23 +54,23 @@ const LoginPage = () => {
 							onChange={(e) => setPassword(e.target.value)}
 						/>
 
-						{error && <p className='text-red-500 font-semibold mb-2'>{error}</p>}
+						{error && <p className='text-error font-semibold mb-2'>{error}</p>}
 
 						<motion.button
 							whileHover={{ scale: 1.02 }}
 							whileTap={{ scale: 0.98 }}
-							className='w-full py-3 px-4 bg-green-600 text-white font-bold rounded-lg shadow-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-white transition duration-200'
+							className='w-full btn btn-primary text-primary-content font-bold shadow-lg hover:btn-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition duration-200'
 							type='submit'
 							disabled={isLoading}
 						>
-							{isLoading ? <Loader className='w-6 h-6 animate-spin mx-auto' /> : "Sign In"}
+							{isLoading ? <Loader className='w-6 h-6 animate-spin mx-auto' /> : "Log In"}
 						</motion.button>
 					</form>
 				</div>
-				<div className='px-8 py-4 bg-gray-50 flex justify-center'>
-					<p className='text-sm text-gray-600'>
+				<div className='px-8 py-4 bg-base-200 flex justify-center'>
+					<p className='text-sm text-base-content/70'>
 						Don't have an account?{" "}
-						<Link to='/signup' className='text-green-600 hover:text-green-700 font-semibold hover:underline'>
+						<Link to='/signup' className='text-primary hover:text-primary-focus font-semibold hover:underline'>
 							Create Account
 						</Link>
 					</p>

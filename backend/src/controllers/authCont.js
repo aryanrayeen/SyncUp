@@ -1,6 +1,6 @@
-console.log("🔥 AUTH CONTROLLER LOADED");
+console.log("AUTH CONTROLLER LOADED");
 import bcryptjs from "bcryptjs";
-import jwt from "jsonwebtoken"; // ✅ added this
+import jwt from "jsonwebtoken"; // added this
 import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js";
 import { User } from "../model/usermodel.js";
 
@@ -58,13 +58,8 @@ export const login = async (req, res) => {
 			return res.status(400).json({ success: false, message: "Invalid credentials" });
 		}
 
-		// ✅ Generate token manually
-		const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-			expiresIn: "7d",
-		});
-
-		// ✅ Set cookie
-		generateTokenAndSetCookie(res, user._id);
+		// Set cookie - this will generate the token with the correct format
+		const token = generateTokenAndSetCookie(res, user._id);
 
 		user.lastLogin = new Date();
 		await user.save();
@@ -77,7 +72,7 @@ export const login = async (req, res) => {
 				name: user.name,
 				email: user.email,
 			},
-			token, // ✅ token is now defined and included
+			token, // token is now defined and included
 		});
 	} catch (error) {
 		console.log("Error in login ", error);

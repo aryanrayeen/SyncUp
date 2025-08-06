@@ -1,112 +1,69 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { useAuthStore } from "../store/authStore";
-import { LogOut, Menu, X } from "lucide-react";
+import { LogOut, User, Search, Bell } from "lucide-react";
 
 const Navbar = () => {
-	const [isOpen, setIsOpen] = useState(false);
-	const { user, logout, isAuthenticated } = useAuthStore();
-	const navigate = useNavigate();
+	const { user, logout } = useAuthStore();
 
-	const handleLogout = async () => {
-		try {
-			await logout();
-			navigate("/login");
-		} catch (error) {
-			console.error("Logout failed:", error);
-		}
+	const handleLogout = () => {
+		logout();
 	};
 
 	return (
-		<nav className="bg-white shadow-lg border-b border-gray-200">
-			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-				<div className="flex justify-between h-16">
-					<div className="flex items-center">
-						<Link to="/" className="flex-shrink-0">
-							<h1 className="text-2xl font-bold text-purple-600">SyncUp</h1>
-						</Link>
-					</div>
-
-					{/* Desktop Navigation */}
-					<div className="hidden md:flex items-center space-x-4">
-						{isAuthenticated ? (
-							<>
-								<span className="text-gray-700">Welcome, {user?.name}!</span>
-								<button
-									onClick={handleLogout}
-									className="flex items-center space-x-1 text-gray-700 hover:text-purple-600 transition-colors"
-								>
-									<LogOut size={20} />
-									<span>Logout</span>
-								</button>
-							</>
-						) : (
-							<div className="flex space-x-4">
-								<Link
-									to="/login"
-									className="text-gray-700 hover:text-purple-600 transition-colors"
-								>
-									Login
-								</Link>
-								<Link
-									to="/signup"
-									className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors"
-								>
-									Sign Up
-								</Link>
-							</div>
-						)}
-					</div>
-
-					{/* Mobile menu button */}
-					<div className="md:hidden flex items-center">
-						<button
-							onClick={() => setIsOpen(!isOpen)}
-							className="text-gray-700 hover:text-green-600"
-						>
-							{isOpen ? <X size={24} /> : <Menu size={24} />}
+		<div className="navbar bg-base-100 shadow-lg border-b border-base-300">
+			<div className="flex-1">
+				<a className="btn btn-ghost text-xl font-bold text-primary">SyncUp</a>
+			</div>
+			
+			{/* Search Bar */}
+			<div className="flex-none gap-2">
+				<div className="form-control">
+					<div className="input-group">
+						<input 
+							type="text" 
+							placeholder="Search..." 
+							className="input input-bordered input-sm w-48" 
+						/>
+						<button className="btn btn-square btn-sm">
+							<Search className="w-4 h-4" />
 						</button>
 					</div>
 				</div>
-			</div>
-
-			{/* Mobile Navigation */}
-			{isOpen && (
-				<div className="md:hidden">
-					<div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-gray-50">
-						{isAuthenticated ? (
-							<>
-								<div className="px-3 py-2 text-gray-700">Welcome, {user?.name}!</div>
-								<button
-									onClick={handleLogout}
-									className="w-full text-left px-3 py-2 text-gray-700 hover:text-purple-600 transition-colors flex items-center space-x-1"
-								>
-									<LogOut size={20} />
-									<span>Logout</span>
-								</button>
-							</>
-						) : (
-							<>
-								<Link
-									to="/login"
-									className="block px-3 py-2 text-gray-700 hover:text-purple-600 transition-colors"
-									onClick={() => setIsOpen(false)}
-								>
-									Login
-								</Link>
-								<Link
-									to="/signup"
-									className="block px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors mx-3"
-									onClick={() => setIsOpen(false)}
-								>
-									Sign Up
-								</Link>
-							</>
-						)}
+				
+				{/* Notifications */}
+				<button className="btn btn-ghost btn-circle">
+					<div className="indicator">
+						<Bell className="w-5 h-5" />
+						<span className="badge badge-xs badge-primary indicator-item"></span>
 					</div>
+				</button>
+				
+				{/* User Profile Dropdown */}
+				<div className="dropdown dropdown-end">
+					<div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
+						<div className="w-10 rounded-full bg-primary flex items-center justify-center">
+							<User className="w-5 h-5 text-primary-content" />
+						</div>
+					</div>
+					<ul tabIndex={0} className="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52">
+						<li>
+							<a className="justify-between">
+								{user?.name}
+								<span className="badge badge-primary">Pro</span>
+							</a>
+						</li>
+						<li><a>Settings</a></li>
+						<li><a>Help</a></li>
+						<li>
+							<button onClick={handleLogout} className="text-error">
+								<LogOut className="w-4 h-4" />
+								Logout
+							</button>
+						</li>
+					</ul>
 				</div>
-			)}
-		</nav>
+			</div>
+		</div>
 	);
 };
 

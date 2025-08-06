@@ -55,7 +55,7 @@ const Footer = () => {
 				
 				<div className="border-t border-gray-700 mt-8 pt-8 text-center">
 					<p className="text-gray-300">
-						© 2025 SyncUp. All rights reserved. Your journey to better health and finances starts here! 💪💰
+						© 2025 SyncUp. All rights reserved. Your journey to better health and finances starts here!
 					</p>
 				</div>
 			</div>

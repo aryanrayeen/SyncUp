@@ -19,22 +19,23 @@ const SignUpPage = () => {
 
 		try {
 			await signup(email, password, name);
-			navigate("/");
+			// Redirect new users to profile setup page instead of dashboard
+			navigate("/profile-setup");
 		} catch (error) {
 			console.log(error);
 		}
 	};
 
 	return (
-		<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-green-50 p-4">
+		<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-lime-100 via-yellow-50 to-green-100 p-4" data-theme="acid">
 			<motion.div
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ duration: 0.5 }}
-				className='max-w-md w-full bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200 overflow-hidden'
+				className='max-w-md w-full bg-base-100 backdrop-blur-xl rounded-2xl shadow-2xl border border-lime-200 overflow-hidden'
 			>
 				<div className='p-8'>
-					<h2 className='text-3xl font-bold mb-6 text-center text-green-600'>
+					<h2 className='text-3xl font-bold mb-6 text-center text-primary'>
 						Create Account
 					</h2>
 
@@ -61,11 +62,11 @@ const SignUpPage = () => {
 							onChange={(e) => setPassword(e.target.value)}
 						/>
 
-						{error && <p className='text-red-500 font-semibold mt-2'>{error}</p>}
+						{error && <p className='text-error font-semibold mt-2'>{error}</p>}
 						<PasswordStrengthMeter password={password} />
 
 						<motion.button
-							className='mt-5 w-full py-3 px-4 bg-green-600 text-white font-bold rounded-lg shadow-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-white transition duration-200'
+							className='mt-5 w-full btn btn-primary text-primary-content font-bold shadow-lg hover:btn-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition duration-200'
 							whileHover={{ scale: 1.02 }}
 							whileTap={{ scale: 0.98 }}
 							type='submit'
@@ -75,10 +76,10 @@ const SignUpPage = () => {
 						</motion.button>
 					</form>
 				</div>
-				<div className='px-8 py-4 bg-gray-50 flex justify-center'>
-					<p className='text-sm text-gray-600'>
+				<div className='px-8 py-4 bg-base-200 flex justify-center'>
+					<p className='text-sm text-base-content/70'>
 						Already have an account?{" "}
-						<Link to={"/login"} className='text-green-600 hover:text-green-700 font-semibold hover:underline'>
+						<Link to={"/login"} className='text-primary hover:text-primary-focus font-semibold hover:underline'>
 							Login
 						</Link>
 					</p>

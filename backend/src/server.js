@@ -3,8 +3,9 @@ import { connectDB } from "./config/db.js";
 import dotenv from "dotenv";
 import fitnessRoutes from "./routes/fitness.route.js";
 import authRoutes from "./routes/auth.route.js";
+import userInfoRoutes from "./routes/userInfo.route.js";
 import cookieParser from "cookie-parser";
-import cors from "cors"; // ✅ Import CORS
+import cors from "cors"; // Import CORS
 
 // Load environment variables
 dotenv.config();
@@ -13,7 +14,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3004;
 
-// ✅ CORS Middleware (must be before routes)
+// CORS Middleware (must be before routes)
 app.use(
   cors({
     origin: "http://localhost:5173", // your frontend's dev URL
@@ -28,10 +29,11 @@ app.use(cookieParser());
 // Routes
 app.use("/api/fitness", fitnessRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/user-info", userInfoRoutes);
 
 // Connect to DB and start server
 connectDB().then(() => {
   app.listen(PORT, () => {
-    console.log(`✅ Server started on PORT: ${PORT}`);
+    console.log(`Server started on PORT: ${PORT}`);
   });
 });
