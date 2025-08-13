@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useAuthStore } from "../store/authStore";
 import { LogOut, User, Search, Bell } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Navbar = () => {
 	const { user, logout } = useAuthStore();
@@ -54,6 +55,9 @@ const Navbar = () => {
 						</li>
 						<li><a>Settings</a></li>
 						<li><a>Help</a></li>
+						<li>
+							<Link to="/weekly-summary">Weekly Summary</Link>
+						</li>
 						<li>
 							<button onClick={handleLogout} className="text-error">
 								<LogOut className="w-4 h-4" />

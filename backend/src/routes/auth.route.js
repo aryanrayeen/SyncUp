@@ -1,9 +1,9 @@
 import express from "express";
 import {
-	login,
-	logout,
-	signup,
-	checkAuth,
+    login,
+    logout,
+    signup,
+    checkAuth,
 } from "../controllers/authCont.js";
 import { updateUserProfile, getUserProfile } from "../controllers/myInfoController.js";
 import { verifyToken } from "../middleware/verifyToken.js";

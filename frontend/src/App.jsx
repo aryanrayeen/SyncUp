@@ -7,11 +7,13 @@ import Trends from './pages/Trends'
 import Goals from './pages/Goals'
 import Expenses from './pages/Expenses'
 import UserProfile from './pages/UserProfile'
+import WeeklySummary from './pages/WeeklySummary'
 import ProfileSetupPage from './pages/ProfileSetupPage'
 import SignUpPage from "./pages/SignUpPage";
 import LoginPage from "./pages/LoginPage";
 import ProtectedRoute from './components/ProtectedRoute'
 import { Toaster } from "react-hot-toast";
+import ChatBot from "./components/ChatBot";
 import { useAuthStore } from "./store/authStore";
 
 // redirect authenticated users to the dashboard
@@ -34,6 +36,7 @@ function App() {
 
     return (
         <div data-theme="acid" className="min-h-screen bg-base-100">
+            <ChatBot />
             <Routes>
                 {/* Auth Routes */}
                 <Route
@@ -145,6 +148,14 @@ function App() {
                                     </main>
                                 </div>
                             </>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/weekly-summary"
+                    element={
+                        <ProtectedRoute>
+                            <WeeklySummary />
                         </ProtectedRoute>
                     }
                 />

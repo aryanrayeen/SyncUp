@@ -1,7 +1,10 @@
+import chatbotRoutes from "./routes/chatbot.route.js";
 import express from "express";
 import { connectDB } from "./config/db.js";
 import dotenv from "dotenv";
 import fitnessRoutes from "./routes/fitness.route.js";
+import financeRoutes from "./routes/finance.route.js";
+import goalRoutes from "./routes/goal.route.js";
 import authRoutes from "./routes/auth.route.js";
 import userInfoRoutes from "./routes/userInfo.route.js";
 import cookieParser from "cookie-parser";
@@ -28,8 +31,11 @@ app.use(cookieParser());
 
 // Routes
 app.use("/api/fitness", fitnessRoutes);
+app.use("/api/finance", financeRoutes);
+app.use("/api/goals", goalRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/user-info", userInfoRoutes);
+app.use("/api/chatbot", chatbotRoutes);
 
 // Connect to DB and start server
 connectDB().then(() => {
