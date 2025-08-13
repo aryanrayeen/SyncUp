@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   Home, 
-  TrendingUp, 
+  Dumbbell, 
   Target, 
   DollarSign, 
   User,
@@ -16,7 +16,7 @@ const Sidebar = () => {
 
   const menuItems = [
     { icon: Home, label: 'Dashboard', path: '/dashboard' },
-    { icon: TrendingUp, label: 'Fitness', path: '/trends' },
+    { icon: Dumbbell, label: 'Fitness', path: '/trends' },
     { icon: Target, label: 'Goals', path: '/goals' },
     { icon: DollarSign, label: 'Expenses', path: '/expenses' },
     { icon: User, label: 'Profile', path: '/profile' },

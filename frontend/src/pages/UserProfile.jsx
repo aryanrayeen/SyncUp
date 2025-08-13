@@ -136,7 +136,7 @@ const UserProfile = () => {
                 </button>
               </div>
               <h2 className="text-2xl font-bold">{formData.name}</h2>
-              <p className="text-base-content/70">{formData.bio}</p>
+              {/* <p className="text-base-content/70">{formData.bio}</p> */}
               <div className="divider"></div>
               <div className="stats stats-vertical shadow">
                 <div className="stat">
