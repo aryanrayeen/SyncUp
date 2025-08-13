@@ -41,8 +41,8 @@ const Navbar = () => {
 				
 				{/* User Profile Dropdown */}
 				<div className="dropdown dropdown-end">
-					<div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
-						<div className="w-10 rounded-full bg-primary flex items-center justify-center">
+					<div tabIndex={0} role="button" className="btn btn-ghost btn-circle flex items-center justify-center">
+						<div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
 							<User className="w-5 h-5 text-primary-content" />
 						</div>
 					</div>
@@ -50,7 +50,7 @@ const Navbar = () => {
 						<li>
 							<a className="justify-between">
 								{user?.name}
-								<span className="badge badge-primary">Pro</span>
+								{/* <span className="badge badge-primary">Pro</span> */}
 							</a>
 						</li>
 						<li><a>Settings</a></li>
