@@ -5,7 +5,7 @@ import {
 	signup,
 	checkAuth,
 } from "../controllers/authCont.js";
-import { updateUserProfile } from "../controllers/myInfoController.js";
+import { updateUserProfile, getUserProfile } from "../controllers/myInfoController.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 
 const router = express.Router();
@@ -16,7 +16,9 @@ router.post("/signup", signup);
 router.post("/login", login);
 router.post("/logout", logout);
 
-// Update user profile (name, etc.)
+// Get user profile (name, email, phone, location)
+router.get("/profile", verifyToken, getUserProfile);
+// Update user profile (name, email, phone, location)
 router.put("/profile", verifyToken, updateUserProfile);
 
 export default router;

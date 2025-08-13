@@ -149,56 +149,34 @@ export const checkProfileCompletion = async (req, res) => {
     }
 };
 
-// Get the latest info (legacy support)
-export const getInfo = async (req, res) => {
+// Get user profile information
+export const getUserProfile = async (req, res) => {
     try {
         const userId = req.userId;
-        const info = await Infos.findOne({ userId }).sort({ date: -1 });
+        console.log("Getting user profile for userId:", userId);
         
-        if (!info) {
-            return res.status(404).json({ message: 'No information found' });
-        }
+        // Find user profile data
+        const user = await User.findById(userId).select('-password'); // Exclude password
         
-        res.status(200).json(info);
-    } catch (error) {
-        console.error('Error in getInfo:', error);
-        res.status(500).json({ message: 'Failed to fetch info' });
-    }
-};
-
-// Update info (legacy support)
-export const updateInfo = async (req, res) => {
-    try {
-        const userId = req.userId;
-        const { age, height, weight, caloriesIntake, exerciseMinutes, monthlyBudget } = req.body;
-
-        // Validate required fields
-        if (!age || !height || !weight || !caloriesIntake || !exerciseMinutes || !monthlyBudget) {
-            return res.status(400).json({ message: 'All fields are required' });
+        if (!user) {
+            console.log("User not found for userId:", userId);
+            return res.status(404).json({ 
+                success: false, 
+                message: "User not found" 
+            });
         }
 
-        // Calculate BMI
-        const heightInMeters = height / 100;
-        const bmi = (weight / (heightInMeters * heightInMeters)).toFixed(1);
-
-        // Create new info entry
-        const info = new Infos({
-            userId,
-            age,
-            height,
-            weight,
-            caloriesIntake,
-            exerciseMinutes,
-            monthlyBudget,
-            bmi,
-            date: new Date()
+        console.log("User profile found:", user);
+        res.status(200).json({
+            success: true,
+            data: user
         });
-
-        await info.save();
-        res.status(201).json(info);
     } catch (error) {
-        console.error('Error in updateInfo:', error);
-        res.status(500).json({ message: 'Failed to update Info' });
+        console.error("Error in getUserProfile:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Failed to fetch user profile" 
+        });
     }
 };
 
