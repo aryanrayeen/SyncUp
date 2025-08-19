@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
+import { Link } from 'react-router-dom';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -112,6 +113,25 @@ const Trends = () => {
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-base-content">Fitness & Progress</h1>
         <p className="text-base-content/70 mt-2">Track your fitness journey and progress over time</p>
+      </div>
+
+      {/* Trends Grids */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <Link to="/workouts" className="card bg-primary/10 shadow-lg cursor-pointer transition hover:scale-105">
+          <div className="card-body flex items-center justify-center">
+            <span className="text-xl font-semibold text-primary">Workouts</span>
+          </div>
+        </Link>
+        <Link to="/tutorials" className="card bg-secondary/10 shadow-lg cursor-pointer transition hover:scale-105">
+          <div className="card-body flex items-center justify-center">
+            <span className="text-xl font-semibold text-secondary">Tutorials</span>
+          </div>
+        </Link>
+        <Link to="/wellness" className="card bg-accent/10 shadow-lg cursor-pointer transition hover:scale-105">
+          <div className="card-body flex items-center justify-center">
+            <span className="text-xl font-semibold text-accent">Wellness</span>
+          </div>
+        </Link>
       </div>
 
       {/* Fitness Stats Cards */}

@@ -11,6 +11,8 @@ import WeeklySummary from './pages/WeeklySummary'
 import ProfileSetupPage from './pages/ProfileSetupPage'
 import SignUpPage from "./pages/SignUpPage";
 import LoginPage from "./pages/LoginPage";
+import Tutorials from './pages/Tutorials'
+import Wellness from './pages/Wellness'
 import ProtectedRoute from './components/ProtectedRoute'
 import { Toaster } from "react-hot-toast";
 import ChatBot from "./components/ChatBot";
@@ -97,6 +99,38 @@ function App() {
                                     <Sidebar />
                                     <main className="flex-1">
                                         <Trends />
+                                    </main>
+                                </div>
+                            </>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/tutorials"
+                    element={
+                        <ProtectedRoute>
+                            <>
+                                <Navbar />
+                                <div className="flex">
+                                    <Sidebar />
+                                    <main className="flex-1">
+                                        <Tutorials />
+                                    </main>
+                                </div>
+                            </>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/wellness"
+                    element={
+                        <ProtectedRoute>
+                            <>
+                                <Navbar />
+                                <div className="flex">
+                                    <Sidebar />
+                                    <main className="flex-1">
+                                        <Wellness />
                                     </main>
                                 </div>
                             </>
