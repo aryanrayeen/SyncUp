@@ -184,7 +184,7 @@ export const getUserProfile = async (req, res) => {
 export const updateUserProfile = async (req, res) => {
     try {
         const userId = req.userId;
-        const { name, email, phone, location } = req.body;
+        const { name, email, phone, location, profilePicture } = req.body;
         
         console.log("Updating user profile for userId:", userId);
         console.log("Request body:", req.body);
@@ -213,6 +213,9 @@ export const updateUserProfile = async (req, res) => {
         }
         if (location && location.trim() !== '') {
             updateData.location = location.trim();
+        }
+        if (profilePicture !== undefined) {
+            updateData.profilePicture = profilePicture;
         }
 
         // Update user profile
