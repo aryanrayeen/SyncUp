@@ -71,6 +71,11 @@ export const login = async (req, res) => {
 				_id: user._id,
 				name: user.name,
 				email: user.email,
+				phone: user.phone,
+				location: user.location,
+				profilePicture: user.profilePicture,
+				createdAt: user.createdAt,
+				updatedAt: user.updatedAt,
 			},
 			token, // token is now defined and included
 		});
@@ -91,6 +96,15 @@ export const checkAuth = async (req, res) => {
 		if (!user) {
 			return res.status(400).json({ success: false, message: "User not found" });
 		}
+
+		console.log("checkAuth - User data:", {
+			_id: user._id,
+			name: user.name,
+			email: user.email,
+			phone: user.phone,
+			location: user.location,
+			profilePicture: user.profilePicture ? 'Present' : 'Not present'
+		});
 
 		res.status(200).json({ success: true, user });
 	} catch (error) {

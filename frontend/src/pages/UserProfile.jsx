@@ -21,12 +21,12 @@ const UserProfile = () => {
   });
 
   // Handle profile picture upload
-  const handleProfilePictureChange = (e) => {
+  const handleProfilePictureChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
       console.log('Profile picture file selected:', file.name);
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         const newProfilePicture = e.target.result;
         console.log('Profile picture converted to base64, length:', newProfilePicture.length);
         
@@ -38,6 +38,22 @@ const UserProfile = () => {
         // Immediately update the user state so it shows in navbar
         console.log('Updating user profile picture in auth store');
         updateUser({ profilePicture: newProfilePicture });
+
+        // Automatically save the profile picture to database
+        try {
+          console.log('Auto-saving profile picture to database...');
+          const profileData = {
+            name: user?.name || formData.name,
+            email: user?.email || formData.email,
+            phone: user?.phone || formData.phone,
+            location: user?.location || formData.location,
+            profilePicture: newProfilePicture
+          };
+          await updateUserProfile(profileData);
+          console.log('Profile picture saved successfully to database');
+        } catch (error) {
+          console.error('Error saving profile picture:', error);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -67,22 +83,47 @@ const UserProfile = () => {
   }, [userInfo, user]);
 
   const handleSave = async () => {
+    console.log('=== SAVE FUNCTION STARTED ===');
+    
     try {
       // Check if profile data has changed and update user profile if needed
-      const profileChanged = 
-        formData.name !== user?.name ||
-        formData.email !== user?.email ||
-        formData.phone !== user?.phone ||
-        formData.location !== user?.location ||
-        formData.profilePicture !== user?.profilePicture;
+      const nameChanged = formData.name !== user?.name;
+      const emailChanged = formData.email !== user?.email;
+      const phoneChanged = formData.phone !== user?.phone;
+      const locationChanged = formData.location !== user?.location;
+      const profilePictureChanged = formData.profilePicture !== user?.profilePicture;
+      
+      const profileChanged = nameChanged || emailChanged || phoneChanged || locationChanged || profilePictureChanged;
 
-      if (profileChanged) {
-        console.log('Updating user profile:', {
+      console.log("=== PROFILE SAVE DEBUG ===");
+      console.log("Profile changed:", profileChanged);
+      console.log("Current formData.profilePicture:", formData.profilePicture ? `Present (length: ${formData.profilePicture.length})` : 'Not present');
+      console.log("Current user.profilePicture:", user?.profilePicture ? `Present (length: ${user.profilePicture.length})` : 'Not present');
+      console.log("Name changed:", nameChanged);
+      console.log("Email changed:", emailChanged);
+      console.log("Phone changed:", phoneChanged);
+      console.log("Location changed:", locationChanged);
+      console.log("Profile picture changed:", profilePictureChanged);
+
+      // ALWAYS UPDATE PROFILE if we have a profile picture in formData but not in user
+      if (formData.profilePicture && !user?.profilePicture) {
+        console.log("Force updating profile because we have a new profile picture");
+        const profileData = {
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
           location: formData.location,
           profilePicture: formData.profilePicture
+        };
+        console.log('Updating user profile:', profileData);
+        await updateUserProfile(profileData);
+      } else if (profileChanged) {
+        console.log('Updating user profile (regular change):', {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          location: formData.location,
+          profilePicture: formData.profilePicture ? 'Present' : 'Not present'
         });
         await updateUserProfile({
           name: formData.name,
@@ -91,6 +132,8 @@ const UserProfile = () => {
           location: formData.location,
           profilePicture: formData.profilePicture
         });
+      } else {
+        console.log("No profile changes detected, skipping profile update");
       }
 
       // Always update fitness data

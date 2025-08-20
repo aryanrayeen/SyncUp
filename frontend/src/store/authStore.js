@@ -29,6 +29,7 @@ export const useAuthStore = create((set) => ({
 
             console.log("Login response:", response); // added
             console.log("Response data:", response.data); // added
+            console.log("User profile picture in login:", response.data.user?.profilePicture ? 'Present' : 'Not present');
 
             set({
                 isAuthenticated: true,
@@ -63,6 +64,9 @@ export const useAuthStore = create((set) => ({
         set({ isLoading: true, error: null });
         try {
             const response = await api.get(`${API_URL}/check-auth`);
+            console.log("checkAuth response:", response.data);
+            console.log("User profile picture in checkAuth:", response.data.user?.profilePicture ? 'Present' : 'Not present');
+            
             set({
                 user: response.data.user,
                 isAuthenticated: true,
@@ -79,7 +83,7 @@ export const useAuthStore = create((set) => ({
         set({ isLoading: true, error: null });
         try {
             console.log('Updating user profile:', profileData);
-            const response = await api.put(`${API_URL}/profile`, profileData);
+            const response = await api.put('/user-info/profile', profileData);
             console.log('Profile updated successfully:', response.data);
             
             // Update the user state with the new data

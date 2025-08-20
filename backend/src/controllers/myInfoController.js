@@ -186,8 +186,13 @@ export const updateUserProfile = async (req, res) => {
         const userId = req.userId;
         const { name, email, phone, location, profilePicture } = req.body;
         
+        console.log("=== UPDATE USER PROFILE ===");
         console.log("Updating user profile for userId:", userId);
         console.log("Request body:", req.body);
+        console.log("Profile picture present:", profilePicture ? 'YES' : 'NO');
+        if (profilePicture) {
+            console.log("Profile picture length:", profilePicture.length);
+        }
 
         // Validate required fields
         if (!name || name.trim() === '') {
@@ -217,6 +222,8 @@ export const updateUserProfile = async (req, res) => {
         if (profilePicture !== undefined) {
             updateData.profilePicture = profilePicture;
         }
+
+        console.log("Update data:", updateData);
 
         // Update user profile
         const updatedUser = await User.findByIdAndUpdate(
