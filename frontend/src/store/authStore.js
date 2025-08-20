@@ -101,4 +101,11 @@ export const useAuthStore = create((set) => ({
     clearError: () => {
         set({ error: null });
     },
+
+    // Function to manually update user data (useful for profile picture updates)
+    updateUser: (userData) => {
+        set((state) => ({
+            user: { ...state.user, ...userData }
+        }));
+    },
 }));

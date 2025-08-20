@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/authStore';
 import { useFitnessStore } from '../store/fitnessStore';
 
 const UserProfile = () => {
-  const { user, updateUserProfile } = useAuthStore();
+  const { user, updateUserProfile, updateUser } = useAuthStore();
   const { userInfo, updateUserInfo, fetchUserInfo, isLoading } = useFitnessStore();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -13,11 +13,35 @@ const UserProfile = () => {
     phone: '',
     location: '',
     bio: 'Fitness enthusiast and health conscious individual',
+    profilePicture: user?.profilePicture || null,
     weight: 0,
     height: 0,
     age: 0,
     bmi: 0
   });
+
+  // Handle profile picture upload
+  const handleProfilePictureChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      console.log('Profile picture file selected:', file.name);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const newProfilePicture = e.target.result;
+        console.log('Profile picture converted to base64, length:', newProfilePicture.length);
+        
+        setFormData(prev => ({
+          ...prev,
+          profilePicture: newProfilePicture
+        }));
+        
+        // Immediately update the user state so it shows in navbar
+        console.log('Updating user profile picture in auth store');
+        updateUser({ profilePicture: newProfilePicture });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Load user info when component mounts
   useEffect(() => {
@@ -33,6 +57,7 @@ const UserProfile = () => {
         email: user?.email || prev.email, // Use updated email from auth store
         phone: user?.phone || prev.phone, // Use updated phone from auth store
         location: user?.location || prev.location, // Use updated location from auth store
+        profilePicture: user?.profilePicture || prev.profilePicture, // Use updated profile picture
         weight: userInfo.weight || 0,
         height: userInfo.height || 0,
         age: userInfo.age || 0,
@@ -48,20 +73,23 @@ const UserProfile = () => {
         formData.name !== user?.name ||
         formData.email !== user?.email ||
         formData.phone !== user?.phone ||
-        formData.location !== user?.location;
+        formData.location !== user?.location ||
+        formData.profilePicture !== user?.profilePicture;
 
       if (profileChanged) {
         console.log('Updating user profile:', {
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
-          location: formData.location
+          location: formData.location,
+          profilePicture: formData.profilePicture
         });
         await updateUserProfile({
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
-          location: formData.location
+          location: formData.location,
+          profilePicture: formData.profilePicture
         });
       }
 
@@ -91,17 +119,26 @@ const UserProfile = () => {
 
   const handleCancel = () => {
     // Reset form data to original values
-    setFormData(prev => ({
-      ...prev,
+    const originalData = {
       name: user?.name || '',
       email: user?.email || '',
       phone: user?.phone || '',
       location: user?.location || '',
+      profilePicture: user?.profilePicture || null,
       weight: userInfo?.weight || 0,
       height: userInfo?.height || 0,
       age: userInfo?.age || 0,
       bmi: userInfo?.bmi || 0
+    };
+    
+    setFormData(prev => ({
+      ...prev,
+      ...originalData
     }));
+    
+    // Restore original profile picture in auth store
+    updateUser({ profilePicture: user?.profilePicture || null });
+    
     setIsEditing(false);
   };
 
@@ -128,12 +165,40 @@ const UserProfile = () => {
           <div className="card bg-base-200 shadow-lg">
             <div className="card-body text-center">
               <div className="relative inline-block">
-                <div className="w-32 h-32 rounded-full bg-primary flex items-center justify-center mx-auto mb-4">
-                  <User className="w-16 h-16 text-primary-content" />
-                </div>
-                <button className="absolute bottom-2 right-2 btn btn-circle btn-sm btn-primary">
-                  <Camera className="w-4 h-4" />
-                </button>
+                {formData.profilePicture ? (
+                  <div className="w-32 h-32 rounded-full overflow-hidden mx-auto mb-4 border-4 border-primary">
+                    <img 
+                      src={formData.profilePicture} 
+                      alt="Profile" 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-32 h-32 rounded-full bg-primary flex items-center justify-center mx-auto mb-4">
+                    <User className="w-16 h-16 text-primary-content" />
+                  </div>
+                )}
+                {isEditing ? (
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleProfilePictureChange}
+                      className="hidden"
+                      id="profile-picture-upload"
+                    />
+                    <label
+                      htmlFor="profile-picture-upload"
+                      className="absolute bottom-2 right-2 btn btn-circle btn-sm btn-primary cursor-pointer"
+                    >
+                      <Camera className="w-4 h-4" />
+                    </label>
+                  </div>
+                ) : (
+                  <button className="absolute bottom-2 right-2 btn btn-circle btn-sm btn-primary opacity-50 cursor-not-allowed">
+                    <Camera className="w-4 h-4" />
+                  </button>
+                )}
               </div>
               <h2 className="text-2xl font-bold">{formData.name}</h2>
               {/* <p className="text-base-content/70">{formData.bio}</p> */}
