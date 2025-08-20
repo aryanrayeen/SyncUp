@@ -132,6 +132,12 @@ const Trends = () => {
             <span className="text-xl font-semibold text-accent">Wellness</span>
           </div>
         </Link>
+        {/* Meal Plan Button */}
+        <Link to="/meal-plan" className="card bg-info/10 shadow-lg cursor-pointer transition hover:scale-105 md:col-span-3">
+          <div className="card-body flex items-center justify-center">
+            <span className="text-xl font-semibold text-info">Generate Meal Plan</span>
+          </div>
+        </Link>
       </div>
 
       {/* Fitness Stats Cards */}

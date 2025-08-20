@@ -18,6 +18,8 @@ import { Toaster } from "react-hot-toast";
 import ChatBot from "./components/ChatBot";
 import { useAuthStore } from "./store/authStore";
 
+import MealPlan from "./pages/MealPlan";
+
 // redirect authenticated users to the dashboard
 const RedirectAuthenticatedUser = ({ children }) => {
 	const { isAuthenticated } = useAuthStore();
@@ -179,6 +181,22 @@ function App() {
                                     <Sidebar />
                                     <main className="flex-1">
                                         <UserProfile />
+                                    </main>
+                                </div>
+                            </>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/meal-plan"
+                    element={
+                        <ProtectedRoute>
+                            <>
+                                <Navbar />
+                                <div className="flex">
+                                    <Sidebar />
+                                    <main className="flex-1">
+                                        <MealPlan />
                                     </main>
                                 </div>
                             </>
