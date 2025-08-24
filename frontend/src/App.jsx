@@ -13,6 +13,7 @@ import SignUpPage from "./pages/SignUpPage";
 import LoginPage from "./pages/LoginPage";
 import Tutorials from './pages/Tutorials'
 import Wellness from './pages/Wellness'
+import Workouts from './pages/Workouts'
 import ProtectedRoute from './components/ProtectedRoute'
 import { Toaster } from "react-hot-toast";
 import ChatBot from "./components/ChatBot";
@@ -133,6 +134,22 @@ function App() {
                                     <Sidebar />
                                     <main className="flex-1">
                                         <Wellness />
+                                    </main>
+                                </div>
+                            </>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/workouts"
+                    element={
+                        <ProtectedRoute>
+                            <>
+                                <Navbar />
+                                <div className="flex">
+                                    <Sidebar />
+                                    <main className="flex-1">
+                                        <Workouts />
                                     </main>
                                 </div>
                             </>

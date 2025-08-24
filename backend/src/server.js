@@ -7,6 +7,7 @@ import financeRoutes from "./routes/finance.route.js";
 import goalRoutes from "./routes/goal.route.js";
 import authRoutes from "./routes/auth.route.js";
 import userInfoRoutes from "./routes/userInfo.route.js";
+import workoutRoutes from "./routes/workout.route.js";
 import cookieParser from "cookie-parser";
 import cors from "cors"; // Import CORS
 
@@ -40,6 +41,7 @@ app.use("/api/goals", goalRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/user-info", userInfoRoutes);
 app.use("/api/chatbot", chatbotRoutes);
+app.use("/api/workouts", workoutRoutes);
 
 // Meal Plan routes
 app.use("/api/meal-plans", mealPlanRoutes);
