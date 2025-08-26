@@ -13,8 +13,10 @@ import {
 } from 'chart.js';
 import { useFitnessStore } from '../store/fitnessStore';
 import { useAuthStore } from '../store/authStore';
+import { useGoalsStore } from '../store/goalsStore';
+import { useFinanceStore } from '../store/financeStore';
 import { useNavigate } from 'react-router-dom';
-import { DollarSign, TrendingUp, Target, Activity, Heart, Scale } from 'lucide-react';
+import { DollarSign, TrendingUp, Target, Activity, Heart, Scale, Plus, CheckCircle } from 'lucide-react';
 
 ChartJS.register(
   CategoryScale,
@@ -40,6 +42,27 @@ const Dashboard = () => {
     error
   } = useFitnessStore();
 
+  const {
+    goals,
+    fetchGoals,
+    getGoalStats,
+    toggleGoal,
+    isLoading: goalsLoading
+  } = useGoalsStore();
+
+  const {
+    transactions,
+    monthlyBudget,
+    fetchTransactions,
+    getCurrentMonthExpenses,
+    getCurrentMonthIncome,
+    getRemainingBudget,
+    getBudgetUsagePercentage,
+    getRecentTransactions,
+    setMonthlyBudget,
+    isLoading: financeLoading
+  } = useFinanceStore();
+
   useEffect(() => {
     const loadUserInfo = async () => {
       console.log('Dashboard - Loading user info...');
@@ -53,7 +76,17 @@ const Dashboard = () => {
     };
     
     loadUserInfo();
-  }, [fetchUserInfo, navigate]);
+    fetchGoals(); // Load goals when dashboard loads
+    
+    // Load financial data
+    if (user?.monthlyBudget) {
+      setMonthlyBudget(user.monthlyBudget);
+    }
+    fetchTransactions({ 
+      month: new Date().getMonth() + 1, 
+      year: new Date().getFullYear() 
+    });
+  }, [fetchUserInfo, fetchGoals, fetchTransactions, setMonthlyBudget, navigate, user]);
 
   if (isLoading && !userInfo) {
     console.log('Dashboard - Loading user info...');
@@ -80,6 +113,21 @@ const Dashboard = () => {
   const bmiInfo = userInfo.bmi ? getBMICategory(userInfo.bmi) : null;
   const calorieBalance = getCalorieBalance();
   const dailyProgress = getDailyProgress();
+
+  // Finance calculations
+  const currentMonthExpenses = getCurrentMonthExpenses();
+  const currentMonthIncome = getCurrentMonthIncome();
+  const remainingBudget = getRemainingBudget();
+  const budgetUsage = getBudgetUsagePercentage();
+  const recentTransactions = getRecentTransactions();
+
+  // Format currency
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
+  };
 
   // Mock weekly data for charts (in real app, this would come from backend)
   const weeklyCalorieData = {
@@ -126,7 +174,7 @@ const Dashboard = () => {
     labels: ['Used', 'Remaining'],
     datasets: [
       {
-        data: [0, userInfo.monthlyBudget], // No expenses yet for new user
+        data: [currentMonthExpenses, Math.max(0, remainingBudget)],
         backgroundColor: ['#f59e0b', '#22c55e'],
         borderWidth: 0,
       },
@@ -214,8 +262,10 @@ const Dashboard = () => {
             <DollarSign size={24} />
           </div>
           <div className="stat-title">Monthly Budget</div>
-          <div className="stat-value text-warning">${userInfo.monthlyBudget}</div>
-          <div className="stat-desc">${userInfo.monthlyBudget} remaining</div>
+          <div className="stat-value text-warning">{formatCurrency(monthlyBudget || 0)}</div>
+          <div className={`stat-desc ${remainingBudget >= 0 ? 'text-success' : 'text-error'}`}>
+            {formatCurrency(remainingBudget)} remaining
+          </div>
         </div>
       </div>
 
@@ -247,36 +297,120 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         {/* Recent Transactions */}
         <div className="card bg-base-200 shadow-xl">
           <div className="card-body">
-            <h2 className="card-title text-lg">Recent Transactions</h2>
-            <div className="flex flex-col items-center justify-center h-48">
-              <div className="text-6xl mb-4">💳</div>
-              <div className="text-center">
-                <div className="text-lg font-semibold text-base-content/70">No recent transactions</div>
-                <div className="text-sm text-base-content/50 mt-1">Your expenses will appear here</div>
-              </div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="card-title text-lg">Recent Transactions</h2>
+              <button 
+                onClick={() => navigate('/expenses')}
+                className="btn btn-circle btn-primary btn-sm"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
             </div>
+            
+            {financeLoading ? (
+              <div className="flex items-center justify-center h-32">
+                <span className="loading loading-spinner loading-md"></span>
+              </div>
+            ) : recentTransactions.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-32">
+                <div className="text-6xl mb-4">💳</div>
+                <div className="text-center">
+                  <div className="text-lg font-semibold text-base-content/70">No recent transactions</div>
+                  <div className="text-sm text-base-content/50 mt-1">Your expenses will appear here</div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {recentTransactions.map((transaction) => (
+                  <div key={transaction._id} className="flex items-center justify-between p-2 bg-base-100 rounded hover:bg-base-200 transition-colors">
+                    <div className="flex-1">
+                      <div className="text-sm font-medium">
+                        {transaction.description || transaction.category}
+                      </div>
+                      <div className="text-xs text-base-content/60">
+                        {new Date(transaction.date).toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })} • {transaction.category}
+                      </div>
+                    </div>
+                    <div className={`text-sm font-bold ${transaction.type === 'income' ? 'text-success' : 'text-error'}`}>
+                      {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                    </div>
+                  </div>
+                ))}
+                <div className="text-center pt-1">
+                  <button 
+                    onClick={() => navigate('/expenses')}
+                    className="text-primary text-xs hover:underline"
+                  >
+                    View all transactions
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Goal Tracker */}
-        <div className="card bg-base-200 shadow-xl lg:col-span-2">
+        <div className="card bg-base-200 shadow-xl">
           <div className="card-body">
-            <h2 className="card-title text-lg">Goal Tracker</h2>
-            <div className="flex flex-col items-center justify-center h-48">
-              <div className="text-center">
-                <div className="text-lg font-semibold text-base-content/70">No goals set yet</div>
-                <div className="text-sm text-base-content/50 mt-1">Start by adding your first goal</div>
-              </div>
-            </div>
-            <div className="flex justify-center mt-4">
-              <button className="btn btn-circle btn-primary">
-                <span className="text-lg">+</span>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="card-title text-lg">Goal Tracker</h2>
+              <button 
+                onClick={() => navigate('/goals')}
+                className="btn btn-circle btn-primary btn-sm"
+              >
+                <Plus className="w-4 h-4" />
               </button>
             </div>
+            
+            {goalsLoading ? (
+              <div className="flex items-center justify-center h-32">
+                <span className="loading loading-spinner loading-md"></span>
+              </div>
+            ) : goals.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-32">
+                <div className="text-center">
+                  <Target className="w-12 h-12 mx-auto text-base-content/30 mb-2" />
+                  <div className="text-sm font-medium text-base-content/70">No goals set yet</div>
+                  <div className="text-xs text-base-content/50 mt-1">Click + to add your first goal</div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {goals.slice(0, 4).map((goal) => (
+                  <div key={goal._id} className="flex items-center gap-2 p-2 bg-base-100 rounded hover:bg-base-200 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={goal.completed}
+                      onChange={() => toggleGoal(goal._id)}
+                      className={`checkbox checkbox-xs ${goal.completed ? 'checkbox-success' : 'checkbox-primary'} cursor-pointer`}
+                    />
+                    <span className={`flex-1 text-sm cursor-pointer ${goal.completed ? 'line-through opacity-60' : ''}`}>
+                      {goal.title.length > 40 ? `${goal.title.substring(0, 40)}...` : goal.title}
+                    </span>
+                    {goal.completed && (
+                      <CheckCircle className="w-3 h-3 text-success" />
+                    )}
+                  </div>
+                ))}
+                {goals.length > 4 && (
+                  <div className="text-center pt-1">
+                    <button 
+                      onClick={() => navigate('/goals')}
+                      className="text-primary text-xs hover:underline"
+                    >
+                      +{goals.length - 4} more goals
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

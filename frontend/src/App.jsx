@@ -5,7 +5,7 @@ import Sidebar from './components/Sidebar'
 import Dashboard from './pages/Dashboard'
 import Trends from './pages/Trends'
 import Goals from './pages/Goals'
-import Expenses from './pages/Expenses'
+import ExpensesPage from './pages/ExpensesPage'
 import UserProfile from './pages/UserProfile'
 import WeeklySummary from './pages/WeeklySummary'
 import ProfileSetupPage from './pages/ProfileSetupPage'
@@ -181,7 +181,7 @@ function App() {
                                 <div className="flex">
                                     <Sidebar />
                                     <main className="flex-1">
-                                        <Expenses />
+                                        <ExpensesPage />
                                     </main>
                                 </div>
                             </>
