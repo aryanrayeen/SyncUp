@@ -13,11 +13,11 @@ export const getAllFinanceLogs = async (req, res) => {
 
     let query = { userId };
     
-    // Add date filtering if month/year provided
+    // Add date filtering if month/year provided (string compare)
     if (month && year) {
-      const startDate = new Date(year, month - 1, 1);
-      const endDate = new Date(year, month, 0, 23, 59, 59);
-      query.date = { $gte: startDate, $lte: endDate };
+      const start = `${year}-${String(month).padStart(2, '0')}-01`;
+      const end = `${year}-${String(month).padStart(2, '0')}-31`;
+      query.date = { $gte: start, $lte: end };
     }
     
     // Add type filtering
@@ -77,7 +77,7 @@ export const createFinanceLog = async (req, res) => {
 
     const log = new FinanceLog({
       userId,
-      date: new Date(date),
+      date: date, // store as string YYYY-MM-DD
       amount: parseFloat(amount),
       type,
       category,
@@ -195,12 +195,12 @@ export const getMonthlyReport = async (req, res) => {
     const currentMonth = month ? parseInt(month) : new Date().getMonth() + 1;
     const currentYear = year ? parseInt(year) : new Date().getFullYear();
     
-    const startDate = new Date(currentYear, currentMonth - 1, 1);
-    const endDate = new Date(currentYear, currentMonth, 0, 23, 59, 59);
-
+    // Use string comparison for date (YYYY-MM-DD)
+    const start = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
+    const end = `${currentYear}-${String(currentMonth).padStart(2, '0')}-31`;
     const logs = await FinanceLog.find({
       userId,
-      date: { $gte: startDate, $lte: endDate }
+      date: { $gte: start, $lte: end }
     }).sort({ date: -1 });
 
     // Calculate totals

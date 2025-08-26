@@ -5,6 +5,7 @@ const goalSchema = new mongoose.Schema({
   title: { type: String, required: true },
   completed: { type: Boolean, default: false },
   completionDate: { type: Date },
+  date: { type: String }, // YYYY-MM-DD, for calendar grouping
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });

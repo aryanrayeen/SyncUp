@@ -1,9 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
 import { useFinanceStore } from '../store/financeStore';
 import { useAuthStore } from '../store/authStore';
 import { Plus, Edit, Trash2, BarChart3, DollarSign } from 'lucide-react';
 
 const ExpensesPage = () => {
+  // Store hooks FIRST (so transactions is available for useMemo)
   const { user, checkAuth } = useAuthStore();
   const {
     transactions,
@@ -27,6 +30,52 @@ const ExpensesPage = () => {
     clearError
   } = useFinanceStore();
 
+  // Filter states
+  const [filters, setFilters] = useState({
+    month: new Date().getMonth() + 1,
+    year: new Date().getFullYear(),
+    type: '',
+    category: ''
+  });
+
+  // Calendar and modal state
+  // Set calendar to today by default
+  const today = new Date();
+  // selectedDate is the currently selected day (default: today)
+  // Modal open state
+  const [selectedDate, setSelectedDate] = useState(null);
+  // calendarMonth is the month currently being viewed in the calendar
+  const [calendarMonth, setCalendarMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+
+  // Sync calendar month with monthly report filter
+  useEffect(() => {
+    setCalendarMonth(new Date(filters.year, filters.month - 1));
+  }, [filters.month, filters.year]);
+
+  // When calendar month changes, update filter
+  const handleCalendarMonthChange = ({ activeStartDate }) => {
+    if (!activeStartDate) return;
+    const newMonth = activeStartDate.getMonth() + 1;
+    const newYear = activeStartDate.getFullYear();
+    if (filters.month !== newMonth || filters.year !== newYear) {
+      setFilters(prev => ({ ...prev, month: newMonth, year: newYear }));
+    }
+    setCalendarMonth(activeStartDate);
+  };
+
+  // Group transactions by date for calendar
+  // Group transactions by local date (not UTC)
+  // Group transactions by date string as-is (no timezone conversion)
+  const txByDate = useMemo(() => {
+    const map = {};
+    transactions.forEach(tx => {
+      const dateStr = tx.date;
+      if (!map[dateStr]) map[dateStr] = [];
+      map[dateStr].push(tx);
+    });
+    return map;
+  }, [transactions]);
+
   // Form states
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [showBudgetModal, setShowBudgetModal] = useState(false);
@@ -41,12 +90,6 @@ const ExpensesPage = () => {
   const [budgetForm, setBudgetForm] = useState({ monthlyBudget: '' });
 
   // Filter states
-  const [filters, setFilters] = useState({
-    month: new Date().getMonth() + 1,
-    year: new Date().getFullYear(),
-    type: '',
-    category: ''
-  });
 
   // Filtered transactions for display in table
   const [filteredTransactions, setFilteredTransactions] = useState([]);
@@ -74,9 +117,12 @@ const ExpensesPage = () => {
   const handleSubmitTransaction = async (e) => {
     e.preventDefault();
     try {
+      // Fix: always use local date string for transaction
+      // Use the date string from the form as-is (YYYY-MM-DD), do not convert to Date or toISOString
       const transactionData = {
         ...formData,
-        amount: parseFloat(formData.amount)
+        amount: parseFloat(formData.amount),
+        date: formData.date
       };
 
       if (editingTransaction) {
@@ -356,77 +402,162 @@ const ExpensesPage = () => {
           </div>
         </div>
 
-        {/* Transactions List */}
+
+        {/* Transactions List: Always show for selected date, default to today if none selected */}
         <div className="card bg-base-200 shadow-md">
           <div className="card-body">
             <h3 className="card-title mb-4">Transactions</h3>
-            
-            {error && (
-              <div className="alert alert-error mb-4">
-                <span>{error}</span>
-                <button onClick={clearError} className="btn btn-sm btn-ghost">×</button>
-              </div>
-            )}
-
-            {isLoading ? (
-              <div className="flex justify-center py-8">
-                <span className="loading loading-spinner loading-lg"></span>
-              </div>
-            ) : filteredTransactions.length === 0 ? (
-              <div className="text-center py-8 text-base-content/70">
-                <p>No transactions found for the selected period. Add your first transaction to get started!</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="table table-zebra">
-                  <thead>
-                    <tr>
-                      <th>Description</th>
-                      <th>Category</th>
-                      <th>Type</th>
-                      <th>Amount</th>
-                      <th>Date</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredTransactions.map((transaction) => (
-                      <tr key={transaction._id}>
-                        <td>{transaction.description || '-'}</td>
-                        <td>{transaction.category}</td>
-                        <td>
-                          <span className={`badge ${transaction.type === 'income' ? 'badge-success' : 'badge-error'}`}>
-                            {transaction.type}
-                          </span>
-                        </td>
-                        <td className={`font-bold ${transaction.type === 'income' ? 'text-success' : 'text-error'}`}>
-                          {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
-                        </td>
-                        <td>{formatDate(transaction.date)}</td>
-                        <td>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleEditTransaction(transaction)}
-                              className="btn btn-ghost btn-sm"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteTransaction(transaction._id)}
-                              className="btn btn-ghost btn-sm text-error"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+            {(() => {
+              const dateToShow = selectedDate || today;
+              const year = dateToShow.getFullYear();
+              const month = String(dateToShow.getMonth() + 1).padStart(2, '0');
+              const day = String(dateToShow.getDate()).padStart(2, '0');
+              const dateStr = `${year}-${month}-${day}`;
+              const txs = txByDate[dateStr] || [];
+              return (
+                <>
+                  <h4 className="mb-2 font-semibold">Transactions for {formatDate(dateToShow)}</h4>
+                  {txs.length ? (
+                    <ul className="divide-y">
+                      {txs.map(tx => (
+                        <li key={tx._id} className="py-2 flex justify-between items-center">
+                          <div>
+                            <span className={`font-bold ${tx.type === 'income' ? 'text-success' : 'text-error'}`}>{tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}</span>
+                            <span className="ml-2">{tx.category}</span>
+                            {tx.description && <span className="ml-2 text-xs text-base-content/60">{tx.description}</span>}
                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                          <div className="flex gap-2">
+                            <button className="btn btn-xs btn-outline" onClick={() => handleEditTransaction(tx)}><Edit className="w-4 h-4" /></button>
+                            <button className="btn btn-xs btn-outline btn-error" onClick={() => handleDeleteTransaction(tx._id)}><Trash2 className="w-4 h-4" /></button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-base-content/60">No transactions for this date.</p>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
+
+
+        {/* Calendar at the bottom with daily totals */}
+        <div className="mt-16 flex flex-col items-center">
+          <h2 className="text-xl font-semibold mb-4 text-base-content">Finance Calendar</h2>
+          <Calendar
+              value={selectedDate || today}
+              activeStartDate={calendarMonth}
+              onActiveStartDateChange={handleCalendarMonthChange}
+              onClickDay={date => {
+                setSelectedDate(date);
+                setCalendarMonth(new Date(date.getFullYear(), date.getMonth(), 1));
+              }}
+            className="rounded-lg shadow-lg bg-base-200 p-4"
+            style={{ width: '700px', fontSize: '1.15rem' }}
+            tileContent={({ date, view }) => {
+              if (view !== 'month') return null;
+              // Use local date string (YYYY-MM-DD) for calendar cell
+              const year = date.getFullYear();
+              const month = String(date.getMonth() + 1).padStart(2, '0');
+              const day = String(date.getDate()).padStart(2, '0');
+              const dateStr = `${year}-${month}-${day}`;
+              const txs = txByDate[dateStr] || [];
+              if (!txs.length) return null;
+              const totalIncome = txs.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+              const totalExpense = txs.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+              return (
+                <div className="flex flex-col items-center mt-1 space-y-0.5">
+                  {totalIncome > 0 && (
+                    <span className="inline-block text-xs bg-green-100 text-green-700 rounded px-1 font-bold">
+                      +{totalIncome}
+                    </span>
+                  )}
+                  {totalExpense > 0 && (
+                    <span className="inline-block text-xs bg-red-100 text-red-700 rounded px-1 font-bold">
+                      -{totalExpense}
+                    </span>
+                  )}
+                </div>
+              );
+            }}
+          />
+        </div>
+
+        {/* Modal for date details and CRUD */}
+        {selectedDate && (
+          <div className="modal modal-open" onClick={e => {
+            if (e.target.classList.contains('modal-open')) {
+              setSelectedDate(null);
+            }
+          }}>
+            <div className="modal-box" onClick={e => e.stopPropagation()}>
+              <h3 className="font-bold text-lg mb-4">Transactions for {formatDate(selectedDate)}</h3>
+              {txByDate[
+                (() => {
+                  // selectedDate is a Date object, convert to YYYY-MM-DD string
+                  if (!selectedDate) return '';
+                  const year = selectedDate.getFullYear();
+                  const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                  const day = String(selectedDate.getDate()).padStart(2, '0');
+                  return `${year}-${month}-${day}`;
+                })()
+              ]?.length ? (
+                <ul className="divide-y">
+                  {txByDate[
+                    (() => {
+                      if (!selectedDate) return '';
+                      const year = selectedDate.getFullYear();
+                      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                      const day = String(selectedDate.getDate()).padStart(2, '0');
+                      return `${year}-${month}-${day}`;
+                    })()
+                  ].map(tx => (
+                    <li key={tx._id} className="py-2 flex justify-between items-center">
+                      <div>
+                        <span className={`font-bold ${tx.type === 'income' ? 'text-success' : 'text-error'}`}>{tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}</span>
+                        <span className="ml-2">{tx.category}</span>
+                        {tx.description && <span className="ml-2 text-xs text-base-content/60">{tx.description}</span>}
+                      </div>
+                      <div className="flex gap-2">
+                        <button className="btn btn-xs btn-outline" onClick={() => handleEditTransaction(tx)}><Edit className="w-4 h-4" /></button>
+                        <button className="btn btn-xs btn-outline btn-error" onClick={() => handleDeleteTransaction(tx._id)}><Trash2 className="w-4 h-4" /></button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-base-content/60">No transactions for this date.</p>
+              )}
+              <div className="modal-action">
+                <button className="btn btn-primary" onClick={() => {
+                  // Always use selectedDate as local YYYY-MM-DD string
+                  function toLocalDateString(date) {
+                    if (!date) return '';
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                  }
+                  const localDate = toLocalDateString(selectedDate);
+                  resetTransactionForm();
+                  setFormData(f => ({ ...f, date: localDate }));
+                  setShowTransactionModal(false); // force close if open
+                  setTimeout(() => {
+                    setShowTransactionModal(true);
+                  }, 0);
+                }}>
+                  <Plus className="w-4 h-4" /> Add Transaction
+                </button>
+                <button className="btn btn-ghost" onClick={() => setSelectedDate(null)}>Close</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal for date details and CRUD (to be implemented next) */}
+        {/* {selectedDate && (...)} */}
       </div>
 
       {/* Transaction Modal */}
@@ -504,6 +635,8 @@ const ExpensesPage = () => {
                   type="date"
                   className="input input-bordered w-full"
                   value={formData.date}
+                  min={formData.date}
+                  max={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                   required
                 />

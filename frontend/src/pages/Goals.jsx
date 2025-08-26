@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
 import { Target, Plus, Edit, Trash2, CheckCircle, Clock } from 'lucide-react';
 import { useGoalsStore } from '../store/goalsStore';
 
@@ -21,6 +23,13 @@ const Goals = () => {
   const [formData, setFormData] = useState({
     title: ''
   });
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [modalDate, setModalDate] = useState(null); // for popup
+  // --- Calendar modal add-goal state ---
+  const [showAddForDate, setShowAddForDate] = useState(false);
+  const [addGoalTitle, setAddGoalTitle] = useState("");
+  // Use a separate loading state for calendar modal add-goal
+  const [isAddingGoalForDate, setIsAddingGoalForDate] = useState(false);
 
   useEffect(() => {
     fetchGoals();
@@ -83,8 +92,10 @@ const Goals = () => {
     });
   };
 
+  const todayStr = new Date().toISOString().slice(0, 10);
   const completedGoals = goals.filter(goal => goal.completed);
-  const pendingGoals = goals.filter(goal => !goal.completed);
+  // Only show pending goals for today
+  const pendingGoals = goals.filter(goal => !goal.completed && (goal.date ? goal.date === todayStr : new Date(goal.createdAt).toISOString().slice(0, 10) === todayStr));
   const stats = getGoalStats();
 
   if (isLoading && goals.length === 0) {
@@ -94,6 +105,17 @@ const Goals = () => {
       </div>
     );
   }
+
+  // Helper: group goals by date (YYYY-MM-DD)
+  const goalsByDate = goals.reduce((acc, goal) => {
+    // Use the explicit 'date' field if present, otherwise fallback
+    const date = goal.date
+      ? goal.date
+      : new Date(goal.completed ? (goal.completionDate || goal.updatedAt) : goal.createdAt).toISOString().slice(0, 10);
+    if (!acc[date]) acc[date] = [];
+    acc[date].push(goal);
+    return acc;
+  }, {});
 
   return (
     <div className="p-6">
@@ -125,8 +147,8 @@ const Goals = () => {
         </div>
       )}
 
-      {/* Progress Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+  {/* Progress Stats */}
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 w-full">
         <div className="card bg-base-200 shadow-lg">
           <div className="card-body">
             <div className="flex items-center justify-between">
@@ -338,8 +360,141 @@ const Goals = () => {
           </div>
         </div>
       </div>
+      {/* Calendar Section */}
+      <div className="mt-10 flex flex-col items-center">
+        <h2 className="text-xl font-semibold mb-4 text-base-content">Calendar</h2>
+        <Calendar
+          onChange={setSelectedDate}
+          value={selectedDate}
+          className="rounded-lg shadow-lg bg-base-200 p-4"
+          tileClassName={() => 'text-base'}
+          style={{ width: '700px', fontSize: '1.15rem' }}
+          tileContent={({ date, view }) => {
+            if (view !== 'month') return null;
+            const dateStr = date.toISOString().slice(0, 10);
+            const goalsForDay = goalsByDate[dateStr] || [];
+            if (!goalsForDay.length) return null;
+            // Show up to 5 dots per row, wrap if more
+            const dotRows = [];
+            for (let i = 0; i < goalsForDay.length; i += 5) {
+              dotRows.push(goalsForDay.slice(i, i + 5));
+            }
+            return (
+              <div className="flex flex-col items-center mt-1 space-y-0.5">
+                {dotRows.map((row, rowIdx) => (
+                  <div key={rowIdx} className="flex justify-center gap-0.5">
+                    {row.map((goal, idx) => (
+                      <span
+                        key={goal._id || idx}
+                        className={`inline-block w-2 h-2 rounded-full border border-base-300 ${goal.completed ? 'bg-green-500' : 'bg-gray-400'}`}
+                        title={goal.title}
+                      ></span>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            );
+          }}
+          onClickDay={(date) => {
+            setModalDate(date);
+          }}
+        />
+
+        {/* Modal for goals on selected date */}
+        {modalDate && (
+          <div className="modal modal-open">
+            <div className="modal-box">
+              <h3 className="font-bold text-lg mb-4">Goals for {modalDate.toLocaleDateString()}</h3>
+              <div className="space-y-2">
+                {(goalsByDate[modalDate.toISOString().slice(0, 10)] || []).length === 0 ? (
+                  <div className="text-base-content/60">No goals for this day.</div>
+                ) : (
+                  goalsByDate[modalDate.toISOString().slice(0, 10)].map((goal) => (
+                    <div key={goal._id} className="flex items-center gap-2 p-2 rounded bg-base-100 border-l-4 border-base-300">
+                      <input
+                        type="checkbox"
+                        checked={goal.completed}
+                        onChange={() => toggleGoal(goal._id)}
+                        className={`checkbox ${goal.completed ? 'checkbox-success' : 'checkbox-primary'}`}
+                      />
+                      <span className={goal.completed ? 'line-through text-success' : ''}>{goal.title}</span>
+                      <span className="ml-auto text-xs text-base-content/50">{goal.completed ? 'Completed' : 'Pending'}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+              {/* Add Goal Inline Form */}
+              <div className="mt-4">
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => setShowAddForDate(true)}
+                  type="button"
+                >
+                  Add Goal for this Day
+                </button>
+                {showAddForDate && (
+                  <form
+                    className="mt-3 flex flex-col gap-2"
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      if (!addGoalTitle.trim()) return;
+                        setIsAddingGoalForDate(true);
+                      try {
+                        // Use the store's addGoal method for correct state update
+                        await addGoal({
+                          title: addGoalTitle,
+                          date: modalDate.toISOString().slice(0, 10),
+                        });
+                        setAddGoalTitle('');
+                        setShowAddForDate(false);
+                      } catch (err) {
+                        // Optionally show error
+                      } finally {
+                        setIsAddingGoalForDate(false);
+                      }
+                    }}
+                  >
+                    <input
+                      className="input input-bordered w-full"
+                      placeholder="Goal title..."
+                      value={addGoalTitle}
+                      onChange={e => setAddGoalTitle(e.target.value)}
+                      required
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => { setShowAddForDate(false); setAddGoalTitle(''); }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="btn btn-primary btn-sm"
+                        disabled={isAddingGoalForDate}
+                      >
+                        {isAddingGoalForDate ? <span className="loading loading-spinner loading-sm"></span> : 'Add'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+              <div className="modal-action">
+                <button className="btn" onClick={() => { setModalDate(null); setShowAddForDate(false); setAddGoalTitle(''); }}>Close</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
+
+// --- Calendar modal add-goal state ---
+// Add these hooks at the top-level of the component (after other useState hooks):
+// const [showAddForDate, setShowAddForDate] = useState(false);
+// const [addGoalTitle, setAddGoalTitle] = useState("");
+// const [isLoading, setIsLoading] = useState(false); // if not already present
 };
 
 export default Goals;

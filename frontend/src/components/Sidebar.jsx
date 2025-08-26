@@ -23,7 +23,7 @@ const Sidebar = () => {
   ];
 
   return (
-    <div className={`bg-base-200 min-h-screen transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}>
+  <div className={`bg-base-200 min-h-screen transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'} relative z-10`}>
       {/* Toggle Button */}
       <div className="p-4 border-b border-base-300">
         <button

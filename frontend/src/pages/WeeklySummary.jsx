@@ -1,16 +1,87 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { useFitnessStore } from "../store/fitnessStore";
+import { useFinanceStore } from "../store/financeStore";
 import { useAuthStore } from "../store/authStore";
 import { Link } from "react-router-dom";
 
 const WeeklySummary = () => {
-  const { userInfo, getBMICategory, getCalorieBalance, getDailyProgress } = useFitnessStore();
+  const {
+    userInfo,
+    getBMICategory,
+    getCalorieBalance,
+    getDailyProgress,
+    weeklyLogs,
+    fetchWeeklyLogs
+  } = useFitnessStore();
+  const {
+    transactions,
+    fetchTransactions,
+    monthlyBudget
+  } = useFinanceStore();
   const { user } = useAuthStore();
   const bmiInfo = userInfo?.bmi ? getBMICategory(userInfo.bmi) : null;
   const calorieBalance = getCalorieBalance();
   const dailyProgress = getDailyProgress();
+
+  // --- Weekly Date Range (Sunday to Saturday) ---
+  const weekDays = ["S", "M", "T", "W", "T", "F", "S"];
+  const today = new Date();
+  const dayOfWeek = today.getDay(); // 0 (Sun) - 6 (Sat)
+  const weekStart = new Date(today);
+  weekStart.setDate(today.getDate() - dayOfWeek);
+  weekStart.setHours(0,0,0,0);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  weekEnd.setHours(23,59,59,999);
+
+  useEffect(() => {
+    fetchWeeklyLogs();
+    fetchTransactions();
+  }, [fetchWeeklyLogs, fetchTransactions]);
+
+  // --- Weekly Finances Aggregation ---
+  const weekTransactions = (transactions || []).filter(tx => {
+    const txDate = new Date(tx.date);
+    return txDate >= weekStart && txDate <= weekEnd;
+  });
+  const totalSpent = weekTransactions.filter(tx => tx.type === 'expense').reduce((sum, tx) => sum + tx.amount, 0);
+  const totalSaved = weekTransactions.filter(tx => tx.type === 'income').reduce((sum, tx) => sum + tx.amount, 0);
+  // Daily breakdown (Sunday to Saturday)
+  const dailySpent = Array(7).fill(0);
+  const dailySaved = Array(7).fill(0);
+  weekTransactions.forEach(tx => {
+    const txDate = new Date(tx.date);
+    const idx = (txDate.getDay() - weekStart.getDay() + 7) % 7;
+    if (tx.type === 'expense') dailySpent[idx] += tx.amount;
+    if (tx.type === 'income') dailySaved[idx] += tx.amount;
+  });
+  // Recent transactions (last 3 for this week)
+  const recentWeekTx = weekTransactions.slice(-3).reverse();
+
+  // Prepare daily buckets
+  const dailyMinutes = Array(7).fill(0);
+  const dailyCalories = Array(7).fill(0);
+  (weeklyLogs || []).forEach(log => {
+    const logDate = new Date(log.date);
+    if (logDate >= weekStart && logDate <= weekEnd) {
+      const idx = (logDate.getDay() - weekStart.getDay() + 7) % 7;
+      dailyMinutes[idx] += log.duration || 0;
+      dailyCalories[idx] += log.calories || 0;
+    }
+  });
+
+  // For bar chart: max 5h (300min), 3h (180min), 1h (60min)
+  const maxBarHeight = 60;
+  const maxMinutes = 300;
+  const barHeights = dailyMinutes.map(mins => Math.round((mins / maxMinutes) * maxBarHeight));
+
+  // For line chart: calories (max 2200, 2000, 1800)
+  const maxCal = 2200;
+  const minCal = 1800;
+  const calRange = maxCal - minCal;
+  const calY = dailyCalories.map(cal => 80 - Math.round(((cal - minCal) / calRange) * 60));
   return (
     <div className="flex min-h-screen">
       <Sidebar />
@@ -18,9 +89,9 @@ const WeeklySummary = () => {
         <Navbar />
         <div className="flex-1 p-8">
           <h1 className="text-3xl font-bold mb-8 text-base-content">Here's your weekly summary!</h1>
-          <div className="grid grid-cols-1 md:grid-cols-2 grid-rows-[auto,auto] gap-4 md:gap-y-0 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full min-w-0">
             {/* Fitness Box */}
-            <div className="card bg-base-200 shadow-xl rounded-lg relative md:row-start-1 md:col-start-1 flex-1">
+            <div className="card bg-base-200 shadow-xl rounded-lg relative flex-1 min-w-0 w-full max-w-full overflow-x-auto p-8 break-words">
               <div className="card-body pt-4">
                 <div className="flex justify-between items-center mb-2">
                   <h2 className="text-2xl font-bold">Fitness Summary:</h2>
@@ -48,13 +119,17 @@ const WeeklySummary = () => {
                         <text x="0" y="25" fontSize="12">5h</text>
                         <text x="0" y="55" fontSize="12">3h</text>
                         <text x="0" y="85" fontSize="12">1h</text>
-                        {/* Bars for each day (S, M, T, W, T, F, S) */}
-                        <rect x="40" y="50" width="20" height="30" fill="#22c55e" />
-                        <rect x="70" y="70" width="20" height="10" fill="#22c55e" />
-                        <rect x="100" y="50" width="20" height="30" fill="#22c55e" />
-                        <rect x="130" y="20" width="20" height="60" fill="#22c55e" />
-                        <rect x="160" y="20" width="20" height="60" fill="#22c55e" />
-                        <rect x="190" y="50" width="20" height="30" fill="#22c55e" />
+                        {/* Bars for each day (S, M, T, W, T, F, S) - dynamic */}
+                        {barHeights.map((h, i) => (
+                          <rect
+                            key={i}
+                            x={40 + i * 30}
+                            y={80 - h}
+                            width="20"
+                            height={h}
+                            fill="#22c55e"
+                          />
+                        ))}
                         {/* Day labels */}
                         <text x="50" y="95" textAnchor="middle" fontSize="12">S</text>
                         <text x="80" y="95" textAnchor="middle" fontSize="12">M</text>
@@ -79,8 +154,13 @@ const WeeklySummary = () => {
                         <text x="0" y="25" fontSize="12">2.2k</text>
                         <text x="0" y="55" fontSize="12">2k</text>
                         <text x="0" y="85" fontSize="12">1.8k</text>
-                        {/* Line for calories */}
-                        <polyline points="40,40 70,80 100,60 130,50 160,40 190,50 220,45" fill="none" stroke="#22c55e" strokeWidth="3" />
+                        {/* Line for calories - dynamic */}
+                        <polyline
+                          points={calY.map((y, i) => `${40 + i * 30},${y}`).join(' ')}
+                          fill="none"
+                          stroke="#22c55e"
+                          strokeWidth="3"
+                        />
                         {/* Day labels */}
                         <text x="50" y="95" textAnchor="middle" fontSize="12">S</text>
                         <text x="80" y="95" textAnchor="middle" fontSize="12">M</text>
@@ -104,9 +184,9 @@ const WeeklySummary = () => {
                           <line x1="20" y1="15" x2="75" y2="15" stroke="#ccc" />
                           <line x1="20" y1="35" x2="75" y2="35" stroke="#ccc" />
                           <line x1="20" y1="55" x2="75" y2="55" stroke="#ccc" />
-                          <text x="2" y="20" fontSize="12">5</text>
-                          <text x="2" y="40" fontSize="12">3</text>
-                          <text x="2" y="58" fontSize="12">1</text>
+                          <text x="2" y="20" fontSize="10" className="sm:font-normal font-thin">5</text>
+                          <text x="2" y="40" fontSize="10" className="sm:font-normal font-thin">3</text>
+                          <text x="2" y="58" fontSize="10" className="sm:font-normal font-thin">1</text>
                           {/* Bar for exercises done (example: 3 workouts) */}
                           <rect x="35" y="35" width="20" height="20" fill="#22c55e" />
                         </svg>
@@ -118,7 +198,7 @@ const WeeklySummary = () => {
               </div>
             </div>
             {/* Finances Box */}
-            <div className="card bg-base-200 shadow-xl rounded-lg relative md:row-start-1 md:col-start-2 flex-1">
+            <div className="card bg-base-200 shadow-xl rounded-lg relative flex-1 min-w-0 w-full max-w-full overflow-x-auto p-8 break-words">
               <div className="card-body pt-4">
                 <div className="flex justify-between items-center mb-2">
                   <h2 className="card-title text-2xl">Finances</h2>
@@ -134,41 +214,43 @@ const WeeklySummary = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <div className="font-semibold mb-2">Targets:</div>
-                    <div className="mb-2">Saved:</div>
+                    <div className="mb-2">Earned (This Week):</div>
                     <div className="w-full h-4 bg-base-300 rounded-full mb-2">
-                      <div className="h-4" style={{ width: '70%', backgroundColor: '#ffe066', borderRadius: '9999px' }}></div>
+                      <div
+                        className="h-4 relative group cursor-pointer"
+                        style={{ width: `${Math.min(100, totalSaved / (monthlyBudget || 1) * 100)}%`, backgroundColor: '#ffe066', borderRadius: '9999px' }}
+                      >
+                        <span
+                          className="absolute left-1/2 -translate-x-1/2 -top-8 bg-base-200 text-base-content text-xs px-2 py-1 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap"
+                        >
+                          {totalSaved.toLocaleString()} BDT/-
+                        </span>
+                      </div>
                     </div>
-                    <div className="relative w-full flex mb-4" style={{ height: '1.5em' }}>
-                      <span className="absolute left-0" style={{ minWidth: '60px' }}>0 BDT/-</span>
-                      <span className="absolute left-1/2 transform -translate-x-1/2" style={{ minWidth: '60px' }}>1000 BDT/-</span>
-                      <span className="absolute right-0 text-right" style={{ minWidth: '60px' }}>2000 BDT/-</span>
+                    <div className="relative w-full flex mb-4 flex-wrap text-xs md:text-sm" style={{ height: '1.5em' }}>
+                      <span className="absolute left-0 whitespace-nowrap" style={{ minWidth: '40px' }}>0 BDT/-</span>
+                      <span className="absolute left-1/2 transform -translate-x-1/2 whitespace-nowrap" style={{ minWidth: '40px' }}>{(monthlyBudget/2).toLocaleString()} BDT/-</span>
+                      <span className="absolute right-0 text-right whitespace-nowrap" style={{ minWidth: '40px' }}>{monthlyBudget.toLocaleString()} BDT/-</span>
                     </div>
                     <div className="mb-2">Spent:</div>
                     <div className="w-full h-4 bg-base-300 rounded-full mb-2">
-                      <div className="h-4" style={{ width: '50%', backgroundColor: '#ffe066', borderRadius: '9999px' }}></div>
+                      <div className="h-4" style={{ width: `${Math.min(100, totalSpent / (monthlyBudget || 1) * 100)}%`, backgroundColor: '#ffe066', borderRadius: '9999px' }}></div>
                     </div>
-                    <div className="relative w-full flex mb-4" style={{ height: '1.5em' }}>
-                      <span className="absolute left-0" style={{ minWidth: '60px' }}>0 BDT/-</span>
-                      <span className="absolute left-1/2 transform -translate-x-1/2" style={{ minWidth: '60px' }}>1000 BDT/-</span>
-                      <span className="absolute right-0 text-right" style={{ minWidth: '60px' }}>2000 BDT/-</span>
+                    <div className="relative w-full flex mb-4 flex-wrap text-xs md:text-sm" style={{ height: '1.5em' }}>
+                      <span className="absolute left-0 whitespace-nowrap" style={{ minWidth: '40px' }}>0 BDT/-</span>
+                      <span className="absolute left-1/2 transform -translate-x-1/2 whitespace-nowrap" style={{ minWidth: '40px' }}>{(monthlyBudget/2).toLocaleString()} BDT/-</span>
+                      <span className="absolute right-0 text-right whitespace-nowrap" style={{ minWidth: '40px' }}>{monthlyBudget.toLocaleString()} BDT/-</span>
                     </div>
                     <div className="font-semibold mb-2">Recent Transactions:</div>
                     <div className="flex flex-col gap-2">
-                      <div className="rounded-lg px-4 py-2 grid grid-cols-3 items-center" style={{ backgroundColor: '#ffe066', color: '#222' }}>
-                        <span className="col-span-1">Hangout</span>
-                        <span className="col-span-1 text-center">13/07/2025</span>
-                        <span className="col-span-1 text-right">-425 BDT/-</span>
-                      </div>
-                      <div className="rounded-lg px-4 py-2 grid grid-cols-3 items-center" style={{ backgroundColor: '#ffe066', color: '#222' }}>
-                        <span className="col-span-1">Family Dinner</span>
-                        <span className="col-span-1 text-center">10/07/2025</span>
-                        <span className="col-span-1 text-right">-850 BDT/-</span>
-                      </div>
-                      <div className="rounded-lg px-4 py-2 grid grid-cols-3 items-center" style={{ backgroundColor: '#ffe066', color: '#222' }}>
-                        <span className="col-span-1">Shopping</span>
-                        <span className="col-span-1 text-center">08/07/2025</span>
-                        <span className="col-span-1 text-right">-350 BDT/-</span>
-                      </div>
+                      {recentWeekTx.length === 0 && <div className="text-xs text-base-content/60">No transactions this week.</div>}
+                      {recentWeekTx.map(tx => (
+                        <div key={tx._id} className="rounded-lg px-4 py-2 grid grid-cols-3 items-center" style={{ backgroundColor: '#ffe066', color: '#222' }}>
+                          <span className="col-span-1 truncate">{tx.category || tx.description || tx.type}</span>
+                          <span className="col-span-1 text-center">{new Date(tx.date).toLocaleDateString()}</span>
+                          <span className="col-span-1 text-right">{tx.type === 'expense' ? '-' : '+'}{tx.amount} BDT/-</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                   <div className="flex flex-col justify-between">
@@ -210,7 +292,7 @@ const WeeklySummary = () => {
                 </div>
               </div>
             </div>
-            <div className="card bg-base-200 shadow-xl min-h-[200px] relative md:col-span-2 md:row-start-2 mt-6">
+            <div className="card bg-base-200 shadow-xl min-h-[200px] relative md:col-span-2 lg:col-span-3 mt-6 min-w-0 overflow-x-auto">
               <div className="card-body pt-4">
                 <div className="flex justify-between items-center mb-2">
                   <h2 className="card-title text-2xl">Goals</h2>

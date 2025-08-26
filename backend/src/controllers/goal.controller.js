@@ -25,7 +25,7 @@ export const getAllGoals = async (req, res) => {
 // Create a new goal
 export const createGoal = async (req, res) => {
   try {
-    const { title } = req.body;
+    const { title, date } = req.body;
     const userId = req.userId;
     
     if (!userId) {
@@ -43,6 +43,7 @@ export const createGoal = async (req, res) => {
       userId,
       title,
       completed: false,
+      date: date || new Date().toISOString().slice(0, 10),
     });
 
     await goal.save();

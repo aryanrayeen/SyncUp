@@ -92,8 +92,22 @@ export const useFitnessStore = create((set, get) => ({
     };
   },
 
+  // Fetch weekly fitness logs
+  weeklyLogs: [],
+  fetchWeeklyLogs: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await api.get('/fitness/summary/weekly');
+      set({ weeklyLogs: response.data.logs || [], isLoading: false });
+      return response.data.logs;
+    } catch (error) {
+      set({ error: error.response?.data?.message || 'Failed to fetch weekly fitness logs', isLoading: false });
+      return [];
+    }
+  },
+
   // Clear store data
   clearData: () => {
-    set({ userInfo: null, isLoading: false, error: null });
+    set({ userInfo: null, isLoading: false, error: null, weeklyLogs: [] });
   }
 }));
