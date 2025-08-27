@@ -93,7 +93,14 @@ const Goals = () => {
   };
 
   const todayStr = new Date().toISOString().slice(0, 10);
-  const completedGoals = goals.filter(goal => goal.completed);
+  // Only show completed goals for today
+  const completedGoals = goals.filter(goal => {
+    if (!goal.completed) return false;
+    const dateStr = goal.completionDate
+      ? new Date(goal.completionDate).toISOString().slice(0, 10)
+      : new Date(goal.updatedAt).toISOString().slice(0, 10);
+    return dateStr === todayStr;
+  });
   // Only show pending goals for today
   const pendingGoals = goals.filter(goal => !goal.completed && (goal.date ? goal.date === todayStr : new Date(goal.createdAt).toISOString().slice(0, 10) === todayStr));
   const stats = getGoalStats();

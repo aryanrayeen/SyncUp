@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Line } from 'react-chartjs-2';
 import { Link } from 'react-router-dom';
 import {
@@ -11,7 +11,8 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { TrendingUp, TrendingDown, Activity, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, Activity } from 'lucide-react';
+import Calendar from 'react-calendar';
 import { useFitnessStore } from '../store/fitnessStore';
 
 ChartJS.register(
@@ -24,6 +25,261 @@ ChartJS.register(
   Legend
 );
 
+
+import { useWorkoutStore } from '../store/workoutStore';
+import api from '../lib/axios';
+import 'react-calendar/dist/Calendar.css';
+
+function PendingCompletedSection() {
+  // Per-date tasks: { [dateStr]: { pending: [], completed: [] } }
+  const [dayTasks, setDayTasks] = useState(() => {
+    try {
+      const data = localStorage.getItem('dayTasks');
+      return data ? JSON.parse(data) : {};
+    } catch {
+      return {};
+    }
+  });
+  // Selected date for viewing/adding tasks
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  // Persist to localStorage whenever dayTasks changes
+  useEffect(() => {
+    localStorage.setItem('dayTasks', JSON.stringify(dayTasks));
+  }, [dayTasks]);
+  const [showPopup, setShowPopup] = useState(false);
+
+  // Workout plans from Zustand store
+  const { workoutPlans, fetchWorkoutPlans, isLoading: loadingWorkouts, error: errorWorkouts } = useWorkoutStore();
+  const [mealPlans, setMealPlans] = useState([]);
+  const [loadingMeals, setLoadingMeals] = useState(false);
+  const [errorMeals, setErrorMeals] = useState(null);
+
+  // Fetch meal plans on mount
+  useEffect(() => {
+    const fetchMeals = async () => {
+      setLoadingMeals(true);
+      try {
+        const res = await api.get('/meal-plans');
+        setMealPlans(res.data);
+        setErrorMeals(null);
+      } catch (err) {
+        setErrorMeals('Failed to load saved meal plans');
+      } finally {
+        setLoadingMeals(false);
+      }
+    };
+    fetchMeals();
+    fetchWorkoutPlans();
+  }, [fetchWorkoutPlans]);
+
+  // All items available to add
+  const realItems = [
+    ...workoutPlans.map((w) => ({ id: w._id, type: 'workout', name: w.name || w.title || 'Workout Plan' })),
+    ...mealPlans.map((m) => ({ id: m._id, type: 'meal', name: m.name || m.title || 'Meal Plan' })),
+  ];
+
+  // Format date as YYYY-MM-DD
+  const formatDate = (date) => date.toISOString().slice(0, 10);
+  const selectedDateStr = formatDate(selectedDate);
+  // Get tasks for selected date
+  const pending = dayTasks[selectedDateStr]?.pending || [];
+  const completed = dayTasks[selectedDateStr]?.completed || [];
+
+  // Add task to pending for selected date
+  const handleAdd = (item) => {
+    setDayTasks((prev) => {
+      const prevDay = prev[selectedDateStr] || { pending: [], completed: [] };
+      if (prevDay.pending.some((i) => i.id === item.id) || prevDay.completed.some((i) => i.id === item.id)) return prev;
+      return {
+        ...prev,
+        [selectedDateStr]: {
+          ...prevDay,
+          pending: [...prevDay.pending, item],
+        },
+      };
+    });
+    setShowPopup(false);
+  };
+  // Mark as completed
+  const handleComplete = (item) => {
+    setDayTasks((prev) => {
+      const prevDay = prev[selectedDateStr] || { pending: [], completed: [] };
+      return {
+        ...prev,
+        [selectedDateStr]: {
+          pending: prevDay.pending.filter((i) => i.id !== item.id),
+          completed: [...prevDay.completed, item],
+        },
+      };
+    });
+  };
+  // Mark as uncompleted
+  const handleUncomplete = (item) => {
+    setDayTasks((prev) => {
+      const prevDay = prev[selectedDateStr] || { pending: [], completed: [] };
+      return {
+        ...prev,
+        [selectedDateStr]: {
+          pending: [...prevDay.pending, item],
+          completed: prevDay.completed.filter((i) => i.id !== item.id),
+        },
+      };
+    });
+  };
+  // Delete task from selected date
+  const handleDelete = (item) => {
+    setDayTasks((prev) => {
+      const prevDay = prev[selectedDateStr] || { pending: [], completed: [] };
+      return {
+        ...prev,
+        [selectedDateStr]: {
+          pending: prevDay.pending.filter((i) => i.id !== item.id),
+          completed: prevDay.completed.filter((i) => i.id !== item.id),
+        },
+      };
+    });
+  };
+
+  return (
+    <div className="mt-10">
+      {/* Pending/Completed Boxes for selected date */}
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-base-content">Fitness Tasks for {selectedDate.toLocaleDateString()}</h2>
+        <button className="btn btn-primary btn-circle" onClick={() => setShowPopup(true)}>
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="card bg-base-200 shadow-lg">
+          <div className="card-body">
+            <h3 className="card-title text-warning">Pending</h3>
+            <div className="space-y-3 mt-4">
+              {pending.length === 0 ? (
+                <div className="text-center py-8 text-base-content/50">No pending items for this day</div>
+              ) : (
+                pending.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between p-3 bg-base-100 rounded-lg border-l-4 border-primary">
+                    <div className="flex items-center gap-3">
+                      <input type="checkbox" className="checkbox checkbox-primary" onChange={() => handleComplete(item)} />
+                      <span>{item.name} <span className="text-xs text-base-content/40">({item.type})</span></span>
+                    </div>
+                    <button className="btn btn-xs btn-error" onClick={() => handleDelete(item)}>✕</button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="card bg-base-200 shadow-lg">
+          <div className="card-body">
+            <h3 className="card-title text-success">Completed</h3>
+            <div className="space-y-3 mt-4">
+              {completed.length === 0 ? (
+                <div className="text-center py-8 text-base-content/50">No completed items for this day</div>
+              ) : (
+                completed.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between p-3 bg-base-100 rounded-lg border-l-4 border-success">
+                    <div className="flex items-center gap-3">
+                      <input type="checkbox" className="checkbox checkbox-success" checked readOnly onClick={() => handleUncomplete(item)} />
+                      <span className="line-through text-success">{item.name} <span className="text-xs text-base-content/40">({item.type})</span></span>
+                    </div>
+                    <button className="btn btn-xs btn-error" onClick={() => handleDelete(item)}>✕</button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Calendar with dots below boxes */}
+      <div className="flex flex-col items-center mb-8">
+        <h3 className="text-xl font-bold mb-2">Calendar</h3>
+        <div className="bg-base-200 p-4 rounded-lg shadow-md">
+          <Calendar
+            value={selectedDate}
+            onClickDay={(date) => {
+              setSelectedDate(date);
+              setShowPopup(true);
+            }}
+            tileContent={({ date }) => {
+              const dateStr = formatDate(date);
+              const tasks = dayTasks[dateStr] || { pending: [], completed: [] };
+              const dots = [];
+              // Grey for pending, green for completed
+              for (let i = 0; i < tasks.pending.length; i++) {
+                dots.push(<span key={`p${i}`} style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#888', margin: 1 }}></span>);
+              }
+              for (let i = 0; i < tasks.completed.length; i++) {
+                dots.push(<span key={`c${i}`} style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#22c55e', margin: 1 }}></span>);
+              }
+              return <div style={{ marginTop: 2, textAlign: 'center' }}>{dots}</div>;
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Popup for adding tasks to selected date */}
+      {showPopup && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg mb-4">Tasks for {selectedDate.toLocaleDateString()}</h3>
+            <div className="mb-4">
+              <div className="font-semibold mb-2">Pending:</div>
+              {pending.length === 0 ? <div className="text-base-content/60 mb-2">No pending tasks.</div> : (
+
+                pending.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between p-2 rounded bg-base-100 border-l-4 border-base-300 mb-1">
+                    <span>{item.name} <span className="text-xs text-base-content/40">({item.type})</span></span>
+                    <div className="flex gap-2">
+                      <button className="btn btn-xs btn-success" onClick={() => handleComplete(item)}>Complete</button>
+                      <button className="btn btn-xs btn-error" onClick={() => handleDelete(item)}>Delete</button>
+                    </div>
+                  </div>
+                ))
+              )}
+              <div className="font-semibold mt-4 mb-2">Completed:</div>
+              {completed.length === 0 ? <div className="text-base-content/60 mb-2">No completed tasks.</div> : (
+                completed.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between p-2 rounded bg-base-100 border-l-4 border-success mb-1">
+                    <span className="line-through text-success">{item.name} <span className="text-xs text-base-content/40">({item.type})</span></span>
+                    <div className="flex gap-2">
+                      <button className="btn btn-xs btn-warning" onClick={() => handleUncomplete(item)}>Uncomplete</button>
+                      <button className="btn btn-xs btn-error" onClick={() => handleDelete(item)}>Delete</button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="mb-4">
+              <h4 className="font-semibold mb-2">Add Task</h4>
+              {loadingMeals || loadingWorkouts ? (
+                <div className="text-center py-4">Loading...</div>
+              ) : errorMeals || errorWorkouts ? (
+                <div className="text-error">{errorMeals || errorWorkouts}</div>
+              ) : realItems.length === 0 ? (
+                <div className="text-base-content/60">No meal or workout plans found.</div>
+              ) : (
+                realItems.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between p-2 rounded bg-base-100 border-l-4 border-base-300 mb-1">
+                    <span>{item.name} <span className="text-xs text-base-content/40">({item.type})</span></span>
+                    <button className="btn btn-xs btn-primary" onClick={() => handleAdd(item)}>Add</button>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="modal-action">
+              <button className="btn" onClick={() => setShowPopup(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+// --- End of PendingCompletedSection, start of Trends component ---
 const Trends = () => {
   const { userInfo, fetchUserInfo, isLoading, error, getBMICategory } = useFitnessStore();
 
@@ -178,11 +434,14 @@ const Trends = () => {
                 <p className="text-sm opacity-70">Est. Active Days/Month</p>
                 <p className="text-2xl font-bold text-info">{metrics.activeDays}</p>
               </div>
-              <Calendar className="w-8 h-8 text-info" />
+              {/* Removed extra calendar icon */}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Pending/Completed Section */}
+      <PendingCompletedSection />
 
       {/* Weight Progress Chart */}
       <div className="max-w-4xl mx-auto">
@@ -205,6 +464,6 @@ const Trends = () => {
       </div>
     </div>
   );
-};
+}
 
 export default Trends;

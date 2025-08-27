@@ -18,10 +18,22 @@ export const createMealPlan = async (req, res) => {
   try {
     const { name, items } = req.body;
     const user = req.userId;
-    const mealPlan = await MealPlan.create({ user, name, items });
-    res.status(201).json(mealPlan);
+    if (req.method === 'PUT' && req.params.id) {
+      // Update existing meal plan
+      const updated = await MealPlan.findOneAndUpdate(
+        { _id: req.params.id, user },
+        { name, items },
+        { new: true }
+      );
+      if (!updated) return res.status(404).json({ error: "Meal plan not found" });
+      return res.json(updated);
+    } else {
+      // Create new meal plan
+      const mealPlan = await MealPlan.create({ user, name, items });
+      res.status(201).json(mealPlan);
+    }
   } catch (err) {
-    res.status(500).json({ error: "Failed to create meal plan" });
+    res.status(500).json({ error: req.method === 'PUT' ? "Failed to update meal plan" : "Failed to create meal plan" });
   }
 };
 

@@ -9,6 +9,7 @@ router.get("/foods", verifyToken, getFoodItems);
 
 // Meal plans
 router.post("/", verifyToken, createMealPlan);
+router.put("/:id", verifyToken, createMealPlan); // Will handle update in controller
 router.get("/", verifyToken, getMealPlans);
 router.get("/:id", verifyToken, getMealPlanById);
 router.delete("/:id", verifyToken, deleteMealPlan);

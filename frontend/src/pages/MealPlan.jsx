@@ -38,6 +38,7 @@ const MealPlan = () => {
   const [planName, setPlanName] = useState("");
   const [planItems, setPlanItems] = useState([]); // {food, quantity}
   const [createdAt, setCreatedAt] = useState(null);
+  const [editingPlanId, setEditingPlanId] = useState(null); // Track if editing
   const [showFoodPicker, setShowFoodPicker] = useState(false);
   const [pickerCategory, setPickerCategory] = useState("Carbs");
 
@@ -73,6 +74,7 @@ const MealPlan = () => {
             setPlanName("");
             setPlanItems([]);
             setCreatedAt(new Date());
+            setEditingPlanId(null);
           }}>
             Create A New Meal Plan
           </button>
@@ -181,14 +183,24 @@ const MealPlan = () => {
                 onClick={async () => {
                   setSaving(true);
                   try {
-                    await api.post("/meal-plans", {
-                      name: planName,
-                      items: planItems.map(item => ({ food: item.food._id, quantity: item.quantity })),
-                    });
+                    if (editingPlanId) {
+                      await api.put(`/meal-plans/${editingPlanId}`,
+                        {
+                          name: planName,
+                          items: planItems.map(item => ({ food: item.food._id, quantity: item.quantity })),
+                        }
+                      );
+                    } else {
+                      await api.post("/meal-plans", {
+                        name: planName,
+                        items: planItems.map(item => ({ food: item.food._id, quantity: item.quantity })),
+                      });
+                    }
                     setShowModal(false);
                     setPlanName("");
                     setPlanItems([]);
                     setCreatedAt(null);
+                    setEditingPlanId(null);
                     await fetchSavedPlans();
                   } catch (err) {
                     alert("Failed to save meal plan");
@@ -317,6 +329,7 @@ const MealPlan = () => {
                       setPlanName(viewPlan.name);
                       setPlanItems(viewPlan.items.map(it => ({ food: it.food, quantity: it.quantity })));
                       setCreatedAt(new Date(viewPlan.createdAt));
+                      setEditingPlanId(viewPlan._id);
                       setViewPlan(null);
                     }}>Edit</button>
                     <button className="btn btn-info" onClick={() => {

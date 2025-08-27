@@ -26,15 +26,18 @@ export const useGoalsStore = create((set, get) => ({
   addGoal: async (goalData) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await api.post('/goals', goalData);
+      // Always include today's date if not provided
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const response = await api.post('/goals', {
+        ...goalData,
+        date: goalData.date || todayStr
+      });
       console.log('Goal added:', response.data);
-      
       const newGoal = response.data.goal;
       set((state) => ({
         goals: [...state.goals, newGoal],
         isLoading: false
       }));
-      
       return newGoal;
     } catch (error) {
       console.error('Error adding goal:', error);
