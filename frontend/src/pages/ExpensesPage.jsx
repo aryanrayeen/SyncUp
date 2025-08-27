@@ -93,6 +93,7 @@ const ExpensesPage = () => {
 
   // Filtered transactions for display in table
   const [filteredTransactions, setFilteredTransactions] = useState([]);
+  const [allTransactions, setAllTransactions] = useState([]); // For top cards
 
   useEffect(() => {
     if (user?.monthlyBudget) {
@@ -100,7 +101,10 @@ const ExpensesPage = () => {
       setBudgetForm({ monthlyBudget: user.monthlyBudget });
     }
     // Fetch all transactions for overview cards calculation
-    fetchTransactions({});
+    (async () => {
+      const all = await fetchTransactions({});
+      setAllTransactions(all || []);
+    })();
   }, [user]);
 
   // Separate effect for filter changes - only affects the filtered view
@@ -109,7 +113,6 @@ const ExpensesPage = () => {
       const filtered = await fetchTransactions(filters);
       setFilteredTransactions(filtered || []);
     };
-    
     fetchFilteredData();
     fetchMonthlyReport(filters.month, filters.year);
   }, [filters.month, filters.year]);
@@ -227,24 +230,19 @@ const ExpensesPage = () => {
   const getCurrentMonthData = () => {
     const currentMonth = new Date().getMonth() + 1;
     const currentYear = new Date().getFullYear();
-    
-    const currentMonthTransactions = transactions.filter(transaction => {
+    const currentMonthTransactions = allTransactions.filter(transaction => {
       const transactionDate = new Date(transaction.date);
       return transactionDate.getMonth() + 1 === currentMonth &&
              transactionDate.getFullYear() === currentYear;
     });
-    
     const expenses = currentMonthTransactions
       .filter(t => t.type === 'expense')
       .reduce((total, t) => total + t.amount, 0);
-      
     const income = currentMonthTransactions
       .filter(t => t.type === 'income')
       .reduce((total, t) => total + t.amount, 0);
-      
     return { expenses, income };
   };
-  
   const { expenses: currentMonthExpenses, income: currentMonthIncome } = getCurrentMonthData();
   const remainingBudget = monthlyBudget - currentMonthExpenses;
   const budgetUsage = monthlyBudget > 0 ? (currentMonthExpenses / monthlyBudget) * 100 : 0;
