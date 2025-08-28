@@ -23,29 +23,36 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend
-);
-
-
+  );
 import { useWorkoutStore } from '../store/workoutStore';
 import api from '../lib/axios';
+import useDayTasks, { formatDateUTC } from '../lib/useDayTasks';
 import 'react-calendar/dist/Calendar.css';
 
+
 function PendingCompletedSection() {
-  // Per-date tasks: { [dateStr]: { pending: [], completed: [] } }
-  const [dayTasks, setDayTasks] = useState(() => {
-    try {
-      const data = localStorage.getItem('dayTasks');
-      return data ? JSON.parse(data) : {};
-    } catch {
-      return {};
+  // Use shared hook for all per-date task logic
+  const { dayTasks, addPending, complete, uncomplete, remove } = useDayTasks();
+  // Persist selectedDate in localStorage to survive refresh
+  const getInitialSelectedDate = () => {
+    const stored = localStorage.getItem('selectedDate');
+    if (stored) {
+      // Always parse as UTC
+      const d = new Date(stored);
+      return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
     }
-  });
-  // Selected date for viewing/adding tasks
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  // Persist to localStorage whenever dayTasks changes
-  useEffect(() => {
-    localStorage.setItem('dayTasks', JSON.stringify(dayTasks));
-  }, [dayTasks]);
+    // Default to today in UTC
+    const now = new Date();
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  };
+  const [selectedDate, setSelectedDateState] = useState(getInitialSelectedDate);
+  // Wrap setSelectedDate to persist to localStorage
+  const setSelectedDate = (date) => {
+    // Always store as ISO string (UTC)
+    const utcDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+    localStorage.setItem('selectedDate', utcDate.toISOString());
+    setSelectedDateState(utcDate);
+  };
   const [showPopup, setShowPopup] = useState(false);
 
   // Workout plans from Zustand store
@@ -80,73 +87,45 @@ function PendingCompletedSection() {
 
   // Format date as YYYY-MM-DD
   const formatDate = (date) => date.toISOString().slice(0, 10);
-  const selectedDateStr = formatDate(selectedDate);
+  // Use UTC date string for all keys
+  const selectedDateStr = formatDateUTC(selectedDate);
   // Get tasks for selected date
   const pending = dayTasks[selectedDateStr]?.pending || [];
   const completed = dayTasks[selectedDateStr]?.completed || [];
 
-  // Add task to pending for selected date
+  // Use shared hook actions
   const handleAdd = (item) => {
-    setDayTasks((prev) => {
-      const prevDay = prev[selectedDateStr] || { pending: [], completed: [] };
-      if (prevDay.pending.some((i) => i.id === item.id) || prevDay.completed.some((i) => i.id === item.id)) return prev;
-      return {
-        ...prev,
-        [selectedDateStr]: {
-          ...prevDay,
-          pending: [...prevDay.pending, item],
-        },
-      };
-    });
+    addPending(selectedDate, item);
     setShowPopup(false);
   };
-  // Mark as completed
-  const handleComplete = (item) => {
-    setDayTasks((prev) => {
-      const prevDay = prev[selectedDateStr] || { pending: [], completed: [] };
-      return {
-        ...prev,
-        [selectedDateStr]: {
-          pending: prevDay.pending.filter((i) => i.id !== item.id),
-          completed: [...prevDay.completed, item],
-        },
-      };
-    });
-  };
-  // Mark as uncompleted
-  const handleUncomplete = (item) => {
-    setDayTasks((prev) => {
-      const prevDay = prev[selectedDateStr] || { pending: [], completed: [] };
-      return {
-        ...prev,
-        [selectedDateStr]: {
-          pending: [...prevDay.pending, item],
-          completed: prevDay.completed.filter((i) => i.id !== item.id),
-        },
-      };
-    });
-  };
-  // Delete task from selected date
-  const handleDelete = (item) => {
-    setDayTasks((prev) => {
-      const prevDay = prev[selectedDateStr] || { pending: [], completed: [] };
-      return {
-        ...prev,
-        [selectedDateStr]: {
-          pending: prevDay.pending.filter((i) => i.id !== item.id),
-          completed: prevDay.completed.filter((i) => i.id !== item.id),
-        },
-      };
-    });
-  };
+  const handleComplete = (item) => complete(selectedDate, item);
+  const handleUncomplete = (item) => uncomplete(selectedDate, item);
+  const handleDelete = (item) => remove(selectedDate, item);
 
   return (
     <div className="mt-10">
       {/* Pending/Completed Boxes for selected date */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-base-content">Fitness Tasks for {selectedDate.toLocaleDateString()}</h2>
-        <button className="btn btn-primary btn-circle" onClick={() => setShowPopup(true)}>
-          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        <h2 className="text-2xl font-bold text-base-content">
+          Fitness Tasks for {selectedDate.toLocaleDateString()}
+        </h2>
+        <button
+          className="btn btn-primary btn-circle"
+          onClick={() => setShowPopup(true)}
+        >
+          <svg
+            width="24"
+            height="24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="lucide lucide-plus"
+          >
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
         </button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -155,15 +134,34 @@ function PendingCompletedSection() {
             <h3 className="card-title text-warning">Pending</h3>
             <div className="space-y-3 mt-4">
               {pending.length === 0 ? (
-                <div className="text-center py-8 text-base-content/50">No pending items for this day</div>
+                <div className="text-center py-8 text-base-content/50">
+                  No pending items for this day
+                </div>
               ) : (
                 pending.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-3 bg-base-100 rounded-lg border-l-4 border-primary">
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between p-3 bg-base-100 rounded-lg border-l-4 border-primary"
+                  >
                     <div className="flex items-center gap-3">
-                      <input type="checkbox" className="checkbox checkbox-primary" onChange={() => handleComplete(item)} />
-                      <span>{item.name} <span className="text-xs text-base-content/40">({item.type})</span></span>
+                      <input
+                        type="checkbox"
+                        className="checkbox checkbox-primary"
+                        onChange={() => handleComplete(item)}
+                      />
+                      <span>
+                        {item.name}{' '}
+                        <span className="text-xs text-base-content/40">
+                          ({item.type})
+                        </span>
+                      </span>
                     </div>
-                    <button className="btn btn-xs btn-error" onClick={() => handleDelete(item)}>✕</button>
+                    <button
+                      className="btn btn-xs btn-error"
+                      onClick={() => handleDelete(item)}
+                    >
+                      ✕
+                    </button>
                   </div>
                 ))
               )}
@@ -175,15 +173,36 @@ function PendingCompletedSection() {
             <h3 className="card-title text-success">Completed</h3>
             <div className="space-y-3 mt-4">
               {completed.length === 0 ? (
-                <div className="text-center py-8 text-base-content/50">No completed items for this day</div>
+                <div className="text-center py-8 text-base-content/50">
+                  No completed items for this day
+                </div>
               ) : (
                 completed.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-3 bg-base-100 rounded-lg border-l-4 border-success">
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between p-3 bg-base-100 rounded-lg border-l-4 border-success"
+                  >
                     <div className="flex items-center gap-3">
-                      <input type="checkbox" className="checkbox checkbox-success" checked readOnly onClick={() => handleUncomplete(item)} />
-                      <span className="line-through text-success">{item.name} <span className="text-xs text-base-content/40">({item.type})</span></span>
+                      <input
+                        type="checkbox"
+                        className="checkbox checkbox-success"
+                        checked
+                        readOnly
+                        onClick={() => handleUncomplete(item)}
+                      />
+                      <span className="line-through text-success">
+                        {item.name}{' '}
+                        <span className="text-xs text-base-content/40">
+                          ({item.type})
+                        </span>
+                      </span>
                     </div>
-                    <button className="btn btn-xs btn-error" onClick={() => handleDelete(item)}>✕</button>
+                    <button
+                      className="btn btn-xs btn-error"
+                      onClick={() => handleDelete(item)}
+                    >
+                      ✕
+                    </button>
                   </div>
                 ))
               )}
@@ -196,26 +215,54 @@ function PendingCompletedSection() {
       <div className="flex flex-col items-center mb-8">
         <h3 className="text-xl font-bold mb-2">Calendar</h3>
         <div className="bg-base-200 p-4 rounded-lg shadow-md">
-          <Calendar
-            value={selectedDate}
-            onClickDay={(date) => {
-              setSelectedDate(date);
-              setShowPopup(true);
-            }}
-            tileContent={({ date }) => {
-              const dateStr = formatDate(date);
-              const tasks = dayTasks[dateStr] || { pending: [], completed: [] };
-              const dots = [];
-              // Grey for pending, green for completed
-              for (let i = 0; i < tasks.pending.length; i++) {
-                dots.push(<span key={`p${i}`} style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#888', margin: 1 }}></span>);
-              }
-              for (let i = 0; i < tasks.completed.length; i++) {
-                dots.push(<span key={`c${i}`} style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#22c55e', margin: 1 }}></span>);
-              }
-              return <div style={{ marginTop: 2, textAlign: 'center' }}>{dots}</div>;
-            }}
-          />
+            <Calendar
+              value={selectedDate}
+              onClickDay={(date) => {
+                // Always treat calendar date as UTC (calendar gives local midnight)
+                const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+                setSelectedDate(utcDate);
+                setShowPopup(true);
+              }}
+              tileContent={({ date }) => {
+                // Always treat calendar date as UTC
+                const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+                const dateStr = formatDateUTC(utcDate);
+                const tasks = dayTasks[dateStr] || { pending: [], completed: [] };
+                const dots = [];
+                // Grey for pending, green for completed
+                for (let i = 0; i < tasks.pending.length; i++) {
+                  dots.push(
+                    <span
+                      key={`p${i}`}
+                      style={{
+                        display: 'inline-block',
+                        width: 7,
+                        height: 7,
+                        borderRadius: '50%',
+                        background: '#888',
+                        margin: 1,
+                      }}
+                    ></span>
+                  );
+                }
+                for (let i = 0; i < tasks.completed.length; i++) {
+                  dots.push(
+                    <span
+                      key={`c${i}`}
+                      style={{
+                        display: 'inline-block',
+                        width: 7,
+                        height: 7,
+                        borderRadius: '50%',
+                        background: '#22c55e',
+                        margin: 1,
+                      }}
+                    ></span>
+                  );
+                }
+                return <div style={{ marginTop: 2, textAlign: 'center' }}>{dots}</div>;
+              }}
+            />
         </div>
       </div>
 
@@ -223,29 +270,70 @@ function PendingCompletedSection() {
       {showPopup && (
         <div className="modal modal-open">
           <div className="modal-box">
-            <h3 className="font-bold text-lg mb-4">Tasks for {selectedDate.toLocaleDateString()}</h3>
+            <h3 className="font-bold text-lg mb-4">
+              Tasks for {selectedDate.toLocaleDateString()}
+            </h3>
             <div className="mb-4">
               <div className="font-semibold mb-2">Pending:</div>
-              {pending.length === 0 ? <div className="text-base-content/60 mb-2">No pending tasks.</div> : (
-
+              {pending.length === 0 ? (
+                <div className="text-base-content/60 mb-2">No pending tasks.</div>
+              ) : (
                 pending.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-2 rounded bg-base-100 border-l-4 border-base-300 mb-1">
-                    <span>{item.name} <span className="text-xs text-base-content/40">({item.type})</span></span>
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between p-2 rounded bg-base-100 border-l-4 border-base-300 mb-1"
+                  >
+                    <span>
+                      {item.name}{' '}
+                      <span className="text-xs text-base-content/40">
+                        ({item.type})
+                      </span>
+                    </span>
                     <div className="flex gap-2">
-                      <button className="btn btn-xs btn-success" onClick={() => handleComplete(item)}>Complete</button>
-                      <button className="btn btn-xs btn-error" onClick={() => handleDelete(item)}>Delete</button>
+                      <button
+                        className="btn btn-xs btn-success"
+                        onClick={() => handleComplete(item)}
+                      >
+                        Complete
+                      </button>
+                      <button
+                        className="btn btn-xs btn-error"
+                        onClick={() => handleDelete(item)}
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
                 ))
               )}
               <div className="font-semibold mt-4 mb-2">Completed:</div>
-              {completed.length === 0 ? <div className="text-base-content/60 mb-2">No completed tasks.</div> : (
+              {completed.length === 0 ? (
+                <div className="text-base-content/60 mb-2">No completed tasks.</div>
+              ) : (
                 completed.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-2 rounded bg-base-100 border-l-4 border-success mb-1">
-                    <span className="line-through text-success">{item.name} <span className="text-xs text-base-content/40">({item.type})</span></span>
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between p-2 rounded bg-base-100 border-l-4 border-success mb-1"
+                  >
+                    <span className="line-through text-success">
+                      {item.name}{' '}
+                      <span className="text-xs text-base-content/40">
+                        ({item.type})
+                      </span>
+                    </span>
                     <div className="flex gap-2">
-                      <button className="btn btn-xs btn-warning" onClick={() => handleUncomplete(item)}>Uncomplete</button>
-                      <button className="btn btn-xs btn-error" onClick={() => handleDelete(item)}>Delete</button>
+                      <button
+                        className="btn btn-xs btn-warning"
+                        onClick={() => handleUncomplete(item)}
+                      >
+                        Uncomplete
+                      </button>
+                      <button
+                        className="btn btn-xs btn-error"
+                        onClick={() => handleDelete(item)}
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
                 ))
@@ -258,26 +346,43 @@ function PendingCompletedSection() {
               ) : errorMeals || errorWorkouts ? (
                 <div className="text-error">{errorMeals || errorWorkouts}</div>
               ) : realItems.length === 0 ? (
-                <div className="text-base-content/60">No meal or workout plans found.</div>
+                <div className="text-base-content/60">
+                  No meal or workout plans found.
+                </div>
               ) : (
                 realItems.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-2 rounded bg-base-100 border-l-4 border-base-300 mb-1">
-                    <span>{item.name} <span className="text-xs text-base-content/40">({item.type})</span></span>
-                    <button className="btn btn-xs btn-primary" onClick={() => handleAdd(item)}>Add</button>
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between p-2 rounded bg-base-100 border-l-4 border-base-300 mb-1"
+                  >
+                    <span>
+                      {item.name}{' '}
+                      <span className="text-xs text-base-content/40">
+                        ({item.type})
+                      </span>
+                    </span>
+                    <button
+                      className="btn btn-xs btn-primary"
+                      onClick={() => handleAdd(item)}
+                    >
+                      Add
+                    </button>
                   </div>
                 ))
               )}
             </div>
             <div className="modal-action">
-              <button className="btn" onClick={() => setShowPopup(false)}>Close</button>
+              <button className="btn" onClick={() => setShowPopup(false)}>
+                Close
+              </button>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }
+// End of PendingCompletedSection
 
 // --- End of PendingCompletedSection, start of Trends component ---
 const Trends = () => {
@@ -290,10 +395,10 @@ const Trends = () => {
   // Generate sample weight progress data based on current weight
   const generateWeightTrendData = () => {
     if (!userInfo) return { labels: [], datasets: [] };
-    
+
     const currentWeight = userInfo.weight;
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-    
+
     // Generate a realistic weight loss progression
     const weightData = months.map((_, index) => {
       return currentWeight + (5 - index); // Shows 5kg loss over 6 months
@@ -331,24 +436,32 @@ const Trends = () => {
       return {
         weightProgress: 'No data',
         avgCalories: 'No data',
-        activeDays: 'No data'
+        activeDays: 'No data',
       };
     }
 
-    const bmi = userInfo.bmi || (userInfo.weight / Math.pow(userInfo.height / 100, 2));
+    const bmi =
+      userInfo.bmi ||
+      userInfo.weight / Math.pow(userInfo.height / 100, 2);
     const bmiCategory = getBMICategory(bmi);
-    
+
     // Calculate weight progress (assuming target weight loss)
     const targetWeight = userInfo.weight - 5; // 5kg loss goal
     const weightProgress = userInfo.weight - targetWeight;
-    
+
     // Estimated active days per month based on exercise minutes
-    const activeDaysPerMonth = Math.min(30, Math.round(userInfo.exerciseMinutes / 30 * 7));
+    const activeDaysPerMonth = Math.min(
+      30,
+      Math.round((userInfo.exerciseMinutes / 30) * 7)
+    );
 
     return {
-      weightProgress: weightProgress > 0 ? `+${weightProgress.toFixed(1)} kg` : `${weightProgress.toFixed(1)} kg`,
+      weightProgress:
+        weightProgress > 0
+          ? `+${weightProgress.toFixed(1)} kg`
+          : `${weightProgress.toFixed(1)} kg`,
       avgCalories: userInfo.caloriesIntake.toLocaleString(),
-      activeDays: activeDaysPerMonth
+      activeDays: activeDaysPerMonth,
     };
   };
 
@@ -368,28 +481,42 @@ const Trends = () => {
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-base-content">Fitness & Progress</h1>
-        <p className="text-base-content/70 mt-2">Track your fitness journey and progress over time</p>
+        <p className="text-base-content/70 mt-2">
+          Track your fitness journey and progress over time
+        </p>
       </div>
 
       {/* Trends Grids */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Link to="/workouts" className="card bg-primary/10 shadow-lg cursor-pointer transition hover:scale-105">
+        <Link
+          to="/workouts"
+          className="card bg-primary/10 shadow-lg cursor-pointer transition hover:scale-105"
+        >
           <div className="card-body flex items-center justify-center">
             <span className="text-xl font-semibold text-primary">Workouts</span>
           </div>
         </Link>
-        <Link to="/tutorials" className="card bg-secondary/10 shadow-lg cursor-pointer transition hover:scale-105">
+        <Link
+          to="/tutorials"
+          className="card bg-secondary/10 shadow-lg cursor-pointer transition hover:scale-105"
+        >
           <div className="card-body flex items-center justify-center">
             <span className="text-xl font-semibold text-secondary">Tutorials</span>
           </div>
         </Link>
-        <Link to="/wellness" className="card bg-accent/10 shadow-lg cursor-pointer transition hover:scale-105">
+        <Link
+          to="/wellness"
+          className="card bg-accent/10 shadow-lg cursor-pointer transition hover:scale-105"
+        >
           <div className="card-body flex items-center justify-center">
             <span className="text-xl font-semibold text-accent">Wellness</span>
           </div>
         </Link>
         {/* Meal Plan Button */}
-        <Link to="/meal-plan" className="card bg-info/10 shadow-lg cursor-pointer transition hover:scale-105 md:col-span-3">
+        <Link
+          to="/meal-plan"
+          className="card bg-info/10 shadow-lg cursor-pointer transition hover:scale-105 md:col-span-3"
+        >
           <div className="card-body flex items-center justify-center">
             <span className="text-xl font-semibold text-info">Generate Meal Plan</span>
           </div>
@@ -403,14 +530,21 @@ const Trends = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm opacity-70">Weight Progress</p>
-                <p className={`text-2xl font-bold ${metrics.weightProgress.includes('-') ? 'text-success' : 'text-warning'}`}>
+                <p
+                  className={`text-2xl font-bold ${
+                    metrics.weightProgress.includes('-')
+                      ? 'text-success'
+                      : 'text-warning'
+                  }`}
+                >
                   {metrics.weightProgress}
                 </p>
               </div>
-              {metrics.weightProgress.includes('-') ? 
-                <TrendingDown className="w-8 h-8 text-success" /> :
+              {metrics.weightProgress.includes('-') ? (
+                <TrendingDown className="w-8 h-8 text-success" />
+              ) : (
                 <TrendingUp className="w-8 h-8 text-warning" />
-              }
+              )}
             </div>
           </div>
         </div>
@@ -449,14 +583,20 @@ const Trends = () => {
           <div className="card-body">
             <h2 className="card-title">Weight Progress Over Time</h2>
             <p className="text-sm opacity-70 mb-4">
-              {userInfo ? `Current: ${userInfo.weight}kg | BMI: ${userInfo.bmi?.toFixed(1) || (userInfo.weight / Math.pow(userInfo.height / 100, 2)).toFixed(1)}` : 'Loading...'}
+              {userInfo
+                ? `Current: ${userInfo.weight}kg | BMI: ${userInfo.bmi?.toFixed(1) || (
+                    userInfo.weight / Math.pow(userInfo.height / 100, 2)
+                  ).toFixed(1)}`
+                : 'Loading...'}
             </p>
             <div className="h-64">
               <Line data={weightTrendData} options={chartOptions} />
             </div>
             {!userInfo && (
               <div className="text-center py-8">
-                <p className="text-base-content/50">Complete your profile to see personalized weight trends</p>
+                <p className="text-base-content/50">
+                  Complete your profile to see personalized weight trends
+                </p>
               </div>
             )}
           </div>
@@ -464,6 +604,6 @@ const Trends = () => {
       </div>
     </div>
   );
-}
+};
 
 export default Trends;
