@@ -18,18 +18,27 @@ export const createMealPlan = async (req, res) => {
   try {
     const { name, items } = req.body;
     const user = req.userId;
+    // Calculate total calories for the meal plan
+    let totalCalories = 0;
+    for (const item of items) {
+      const food = await FoodItem.findById(item.food);
+      if (food) {
+        // calories per 100g * quantity (servings of 100g)
+        totalCalories += (food.calories || 0) * (item.quantity || 1);
+      }
+    }
     if (req.method === 'PUT' && req.params.id) {
       // Update existing meal plan
       const updated = await MealPlan.findOneAndUpdate(
         { _id: req.params.id, user },
-        { name, items },
+        { name, items, calories: totalCalories },
         { new: true }
       );
       if (!updated) return res.status(404).json({ error: "Meal plan not found" });
       return res.json(updated);
     } else {
       // Create new meal plan
-      const mealPlan = await MealPlan.create({ user, name, items });
+      const mealPlan = await MealPlan.create({ user, name, items, calories: totalCalories });
       res.status(201).json(mealPlan);
     }
   } catch (err) {

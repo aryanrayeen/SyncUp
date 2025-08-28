@@ -9,6 +9,7 @@ const MealPlanSchema = new mongoose.Schema({
       quantity: { type: Number, required: true, default: 1 }, // number of servings (100g each)
     }
   ],
+  calories: { type: Number, required: true, default: 0 },
   createdAt: { type: Date, default: Date.now },
 });
 

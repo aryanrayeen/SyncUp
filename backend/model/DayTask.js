@@ -10,7 +10,8 @@ const NewDayTaskSchema = new mongoose.Schema({
         {
           id: String,
           type: String,
-          name: String
+          name: String,
+          calories: Number // Optional, only for meal plans
         },
         { _id: false }
       )
@@ -23,7 +24,8 @@ const NewDayTaskSchema = new mongoose.Schema({
         {
           id: String,
           type: String,
-          name: String
+          name: String,
+          calories: Number // Optional, only for meal plans
         },
         { _id: false }
       )

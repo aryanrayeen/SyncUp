@@ -63,13 +63,15 @@ const WeeklySummary = () => {
   const dailyTaskCounts = Array(7).fill(0);
   const dailyCalories = Array(7).fill(0);
   for (let i = 0; i < 7; i++) {
-  const d = new Date(weekStart);
-  d.setUTCDate(weekStart.getUTCDate() + i);
-  const dateStr = formatDateUTC(d);
-  const completed = dayTasks[dateStr]?.completed || [];
-  dailyTaskCounts[i] = completed.length > 0 ? completed.length : 0;
-    // Optionally, sum calories if you want to show them
-    // dailyCalories[i] = completed.reduce((sum, t) => sum + (t.calories || 0), 0);
+    const d = new Date(weekStart);
+    d.setUTCDate(weekStart.getUTCDate() + i);
+    const dateStr = formatDateUTC(d);
+    const completed = dayTasks[dateStr]?.completed || [];
+    dailyTaskCounts[i] = completed.length > 0 ? completed.length : 0;
+    // Sum calories for completed meal plans only
+    dailyCalories[i] = completed
+      .filter(t => t.type === 'meal' && t.calories)
+      .reduce((sum, t) => sum + t.calories, 0);
   }
 
   // For bar chart: y-axis is max number of completed tasks in a day (min 1 for visibility)
@@ -82,7 +84,8 @@ const WeeklySummary = () => {
   const maxCal = 2200;
   const minCal = 1800;
   const calRange = maxCal - minCal;
-  const calY = dailyCalories.map(cal => 80 - Math.round(((cal - minCal) / calRange) * 60));
+  // Move the line chart slightly lower (set Y offset to -160)
+  const calY = dailyCalories.map(cal => -160 - Math.round(((cal - minCal) / calRange) * 60));
   return (
     <div className="flex min-h-screen">
       <Sidebar />

@@ -94,11 +94,21 @@ function PendingCompletedSection() {
   const completed = dayTasks[selectedDateStr]?.completed || [];
 
   // Use shared hook actions
+  // Helper to add calories to meal plan items
+  const withMealCalories = (item) => {
+    if (item.type === 'meal') {
+      const meal = mealPlans.find(m => m._id === item.id);
+      // Always attach calories, fallback to 0 if not found
+      return { ...item, calories: meal && typeof meal.calories === 'number' ? meal.calories : 0 };
+    }
+    return item;
+  };
+
   const handleAdd = async (item) => {
-    await addPending(selectedDate, item);
+    await addPending(selectedDate, withMealCalories(item));
     setShowPopup(false);
   };
-  const handleComplete = async (item) => { await complete(selectedDate, item); };
+  const handleComplete = async (item) => { await complete(selectedDate, withMealCalories(item)); };
   const handleUncomplete = async (item) => { await uncomplete(selectedDate, item); };
   const handleDelete = async (item) => { await remove(selectedDate, item); };
 
