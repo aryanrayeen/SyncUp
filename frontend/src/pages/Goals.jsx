@@ -47,13 +47,15 @@ const Goals = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title.trim()) return;
-    
     try {
       if (editingGoal) {
         await updateGoal(editingGoal._id, { title: formData.title });
         setEditingGoal(null);
       } else {
-        await addGoal({ title: formData.title });
+        // Always use today's local date for main form
+        const todayLocal = new Date();
+        const localDateStr = todayLocal.getFullYear() + '-' + String(todayLocal.getMonth() + 1).padStart(2, '0') + '-' + String(todayLocal.getDate()).padStart(2, '0');
+        await addGoal({ title: formData.title, date: localDateStr });
       }
       setFormData({ title: '' });
       setShowAddForm(false);
@@ -101,8 +103,19 @@ const Goals = () => {
       : new Date(goal.updatedAt).toISOString().slice(0, 10);
     return dateStr === todayStr;
   });
-  // Only show pending goals for today
-  const pendingGoals = goals.filter(goal => !goal.completed && (goal.date ? goal.date === todayStr : new Date(goal.createdAt).toISOString().slice(0, 10) === todayStr));
+  // Only show pending goals for today (strict match)
+  const pendingGoals = goals.filter(goal => {
+    if (goal.completed) return false;
+    if (goal.date) {
+      return goal.date === todayStr;
+    }
+    // fallback: createdAt is today
+    return new Date(goal.createdAt).toISOString().slice(0, 10) === todayStr;
+  });
+  // Debug: log all goals and their date fields for troubleshooting
+  console.log('All goals:', goals.map(g => ({ title: g.title, date: g.date, createdAt: g.createdAt, completed: g.completed })));
+  console.log('Today string:', todayStr);
+  console.log('Pending goals for today:', pendingGoals.map(g => ({ title: g.title, date: g.date, createdAt: g.createdAt })));
   const stats = getGoalStats();
 
   if (isLoading && goals.length === 0) {
@@ -285,7 +298,7 @@ const Goals = () => {
                       <div className="flex-1">
                         <h3 className="font-medium text-base-content">{goal.title}</h3>
                         <div className="text-sm text-base-content/60 mt-1">
-                          Created: {formatDate(goal.createdAt)}
+                          {goal.date ? `Scheduled: ${formatDate(goal.date)}` : `Created: ${formatDate(goal.createdAt)}`}
                         </div>
                       </div>
                     </div>
@@ -378,8 +391,9 @@ const Goals = () => {
           style={{ width: '700px', fontSize: '1.15rem' }}
           tileContent={({ date, view }) => {
             if (view !== 'month') return null;
-            const dateStr = date.toISOString().slice(0, 10);
-            const goalsForDay = goalsByDate[dateStr] || [];
+            // Use local date string (YYYY-MM-DD) for matching
+            const localDateStr = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+            const goalsForDay = goalsByDate[localDateStr] || [];
             if (!goalsForDay.length) return null;
             // Show up to 5 dots per row, wrap if more
             const dotRows = [];
@@ -413,10 +427,13 @@ const Goals = () => {
             <div className="modal-box">
               <h3 className="font-bold text-lg mb-4">Goals for {modalDate.toLocaleDateString()}</h3>
               <div className="space-y-2">
-                {(goalsByDate[modalDate.toISOString().slice(0, 10)] || []).length === 0 ? (
-                  <div className="text-base-content/60">No goals for this day.</div>
-                ) : (
-                  goalsByDate[modalDate.toISOString().slice(0, 10)].map((goal) => (
+                {(() => {
+                  const modalLocalDateStr = modalDate.getFullYear() + '-' + String(modalDate.getMonth() + 1).padStart(2, '0') + '-' + String(modalDate.getDate()).padStart(2, '0');
+                  const goalsForModalDay = goalsByDate[modalLocalDateStr] || [];
+                  if (goalsForModalDay.length === 0) {
+                    return <div className="text-base-content/60">No goals for this day.</div>;
+                  }
+                  return goalsForModalDay.map((goal) => (
                     <div key={goal._id} className="flex items-center gap-2 p-2 rounded bg-base-100 border-l-4 border-base-300">
                       <input
                         type="checkbox"
@@ -427,8 +444,8 @@ const Goals = () => {
                       <span className={goal.completed ? 'line-through text-success' : ''}>{goal.title}</span>
                       <span className="ml-auto text-xs text-base-content/50">{goal.completed ? 'Completed' : 'Pending'}</span>
                     </div>
-                  ))
-                )}
+                  ));
+                })()}
               </div>
               {/* Add Goal Inline Form */}
               <div className="mt-4">
@@ -448,9 +465,12 @@ const Goals = () => {
                         setIsAddingGoalForDate(true);
                       try {
                         // Use the store's addGoal method for correct state update
+                        // Always use modalDate as local date (not UTC)
+                        const modalLocal = new Date(modalDate.getFullYear(), modalDate.getMonth(), modalDate.getDate());
+                        const modalDateStr = modalLocal.getFullYear() + '-' + String(modalLocal.getMonth() + 1).padStart(2, '0') + '-' + String(modalLocal.getDate()).padStart(2, '0');
                         await addGoal({
                           title: addGoalTitle,
-                          date: modalDate.toISOString().slice(0, 10),
+                          date: modalDateStr,
                         });
                         setAddGoalTitle('');
                         setShowAddForDate(false);
