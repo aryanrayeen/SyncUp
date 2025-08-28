@@ -94,13 +94,13 @@ function PendingCompletedSection() {
   const completed = dayTasks[selectedDateStr]?.completed || [];
 
   // Use shared hook actions
-  const handleAdd = (item) => {
-    addPending(selectedDate, item);
+  const handleAdd = async (item) => {
+    await addPending(selectedDate, item);
     setShowPopup(false);
   };
-  const handleComplete = (item) => complete(selectedDate, item);
-  const handleUncomplete = (item) => uncomplete(selectedDate, item);
-  const handleDelete = (item) => remove(selectedDate, item);
+  const handleComplete = async (item) => { await complete(selectedDate, item); };
+  const handleUncomplete = async (item) => { await uncomplete(selectedDate, item); };
+  const handleDelete = async (item) => { await remove(selectedDate, item); };
 
   return (
     <div className="mt-10">

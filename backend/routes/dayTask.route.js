@@ -1,6 +1,6 @@
 
 import express from 'express';
-import DayTask from '../model/DayTask.js';
+import NewDayTask from '../model/DayTask.js';
 import verifyToken from '../src/middleware/verifyToken.js';
 const router = express.Router();
 
@@ -8,9 +8,9 @@ const router = express.Router();
 router.get('/:date', verifyToken, async (req, res) => {
   try {
     const { date } = req.params; // YYYY-MM-DD
-    const user = req.user.id;
-    const dayTask = await DayTask.findOne({ user, date });
-    res.json(dayTask || { date, pending: [], completed: [] });
+    const user = req.userId;
+  const dayTask = await NewDayTask.findOne({ user, date });
+  res.json(dayTask || { date, pending: [], completed: [] });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
@@ -20,15 +20,17 @@ router.get('/:date', verifyToken, async (req, res) => {
 router.post('/:date', verifyToken, async (req, res) => {
   try {
     const { date } = req.params;
-    const user = req.user.id;
+    const user = req.userId;
     const { pending = [], completed = [] } = req.body;
-    const dayTask = await DayTask.findOneAndUpdate(
+    console.log('POST /day-tasks/:date debug:', { user, date, pending, completed });
+    const dayTask = await NewDayTask.findOneAndUpdate(
       { user, date },
       { $set: { pending, completed } },
       { upsert: true, new: true }
     );
-    res.json(dayTask);
+  res.json(dayTask);
   } catch (err) {
+    console.error('Error in POST /day-tasks/:date:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -37,8 +39,8 @@ router.post('/:date', verifyToken, async (req, res) => {
 router.delete('/:date', verifyToken, async (req, res) => {
   try {
     const { date } = req.params;
-    const user = req.user.id;
-    await DayTask.findOneAndDelete({ user, date });
+    const user = req.userId;
+  await NewDayTask.findOneAndDelete({ user, date });
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
