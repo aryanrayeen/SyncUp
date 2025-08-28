@@ -1,18 +1,21 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { Plus } from 'lucide-react';
 import { useWorkoutStore } from '../store/workoutStore';
-import api from '../lib/axios';
 
-// Helper to format date as YYYY-MM-DD
-const formatDate = (date) => date.toISOString().slice(0, 10);
+import api from '../lib/axios';
+import useDayTasks, { formatDateUTC } from '../lib/useDayTasks';
+
+
+
 
 const Fitness = () => {
-  // Per-day state: { [dateStr]: { pending: [], completed: [] } }
-  const [dayItems, setDayItems] = useState({});
+  // Use shared dayTasks state
+  const { dayTasks, addPending, complete, uncomplete, remove } = useDayTasks();
   const [showPopup, setShowPopup] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  // Always use a date string for selectedDate to avoid timezone issues
+  const [selectedDate, setSelectedDate] = useState(() => formatDateUTC(new Date()));
   const [mealPlans, setMealPlans] = useState([]);
   const [loadingMeals, setLoadingMeals] = useState(false);
   const [errorMeals, setErrorMeals] = useState(null);
@@ -45,59 +48,35 @@ const Fitness = () => {
   ];
 
   // Get items for selected day
-  const dateStr = formatDate(selectedDate);
-  const pending = dayItems[dateStr]?.pending || [];
-  const completed = dayItems[dateStr]?.completed || [];
+  const dateStr = selectedDate;
+  const pending = dayTasks[dateStr]?.pending || [];
+  const completed = dayTasks[dateStr]?.completed || [];
 
   // Add item to pending for selected day
   const handleAddToPending = (item) => {
-    setDayItems((prev) => {
-      const prevDay = prev[dateStr] || { pending: [], completed: [] };
-      // Prevent duplicates
-      if (prevDay.pending.some((i) => i.id === item.id)) return prev;
-      return {
-        ...prev,
-        [dateStr]: {
-          ...prevDay,
-          pending: [...prevDay.pending, item],
-        },
-      };
-    });
+    addPending(new Date(selectedDate), item);
     setShowPopup(false);
   };
 
   // Mark as completed
   const handleComplete = (item) => {
-    setDayItems((prev) => {
-      const prevDay = prev[dateStr] || { pending: [], completed: [] };
-      return {
-        ...prev,
-        [dateStr]: {
-          pending: prevDay.pending.filter((i) => i.id !== item.id),
-          completed: [...prevDay.completed, item],
-        },
-      };
-    });
+    complete(new Date(selectedDate), item);
   };
 
   // Mark as uncompleted (move back to pending)
   const handleUncomplete = (item) => {
-    setDayItems((prev) => {
-      const prevDay = prev[dateStr] || { pending: [], completed: [] };
-      return {
-        ...prev,
-        [dateStr]: {
-          pending: [...prevDay.pending, item],
-          completed: prevDay.completed.filter((i) => i.id !== item.id),
-        },
-      };
-    });
+    uncomplete(new Date(selectedDate), item);
+  };
+
+  // Remove item from both pending and completed
+  const handleDelete = (item) => {
+    remove(new Date(selectedDate), item);
   };
 
   // Change selected date
-  const handleDateChange = useCallback((date) => {
-    setSelectedDate(date);
-  }, []);
+  const handleDateChange = (date) => {
+    setSelectedDate(formatDateUTC(date));
+  };
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -106,6 +85,12 @@ const Fitness = () => {
 
       {/* --- NEW: Pending/Completed/Calendar Section --- */}
       <div className="mt-16">
+        {/* Debug warning if dateStr not in dayItems */}
+        {dayTasks && Object.keys(dayTasks).length > 0 && !dayTasks[dateStr] && (
+          <div style={{color:'red',fontWeight:'bold',marginBottom:8}}>
+            Warning: No data for selected date ({dateStr}). Existing keys: {Object.keys(dayTasks).join(', ')}
+          </div>
+        )}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-base-content">Today's Fitness Tasks</h2>
           <button className="btn btn-primary btn-circle" onClick={() => setShowPopup(true)}>
@@ -127,6 +112,7 @@ const Fitness = () => {
                         <input type="checkbox" className="checkbox checkbox-primary" onChange={() => handleComplete(item)} />
                         <span>{item.name} <span className="text-xs text-base-content/40">({item.type})</span></span>
                       </div>
+                      <button className="btn btn-xs btn-error" onClick={() => handleDelete(item)}>✕</button>
                     </div>
                   ))
                 )}
@@ -147,6 +133,7 @@ const Fitness = () => {
                         <input type="checkbox" className="checkbox checkbox-success" checked readOnly onClick={() => handleUncomplete(item)} />
                         <span className="line-through text-success">{item.name} <span className="text-xs text-base-content/40">({item.type})</span></span>
                       </div>
+                      <button className="btn btn-xs btn-error" onClick={() => handleDelete(item)}>✕</button>
                     </div>
                   ))
                 )}
@@ -159,10 +146,22 @@ const Fitness = () => {
           <h3 className="text-xl font-semibold mb-4 text-base-content">Calendar</h3>
           <Calendar
             onChange={handleDateChange}
-            value={selectedDate}
+            value={new Date(selectedDate)}
             className="rounded-lg shadow-lg bg-base-200 p-4"
             tileClassName={() => 'text-base'}
             style={{ width: '700px', fontSize: '1.15rem' }}
+            tileContent={({ date }) => {
+              const dateStr = formatDateUTC(date);
+              const tasks = dayTasks[dateStr] || { pending: [], completed: [] };
+              const dots = [];
+              for (let i = 0; i < tasks.pending.length; i++) {
+                dots.push(<span key={`p${i}`} style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#888', margin: 1 }}></span>);
+              }
+              for (let i = 0; i < tasks.completed.length; i++) {
+                dots.push(<span key={`c${i}`} style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#22c55e', margin: 1 }}></span>);
+              }
+              return <div style={{ marginTop: 2, textAlign: 'center' }}>{dots}</div>;
+            }}
           />
         </div>
       </div>

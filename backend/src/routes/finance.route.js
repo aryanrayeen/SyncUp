@@ -9,7 +9,7 @@ import {
   logFinance, 
   getWeeklyFinanceSummary 
 } from "../controllers/finance.controller.js";
-import { verifyToken } from "../middleware/verifyToken.js";
+import verifyToken from "../middleware/verifyToken.js";
 
 const router = express.Router();
 

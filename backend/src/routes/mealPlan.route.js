@@ -1,6 +1,6 @@
 import express from "express";
 import { getFoodItems, createMealPlan, getMealPlans, getMealPlanById, deleteMealPlan } from "../controllers/mealPlan.controller.js";
-import { verifyToken } from "../middleware/verifyToken.js";
+import verifyToken from "../middleware/verifyToken.js";
 
 const router = express.Router();
 

@@ -5,6 +5,7 @@ import { useFitnessStore } from "../store/fitnessStore";
 import { useFinanceStore } from "../store/financeStore";
 import { useAuthStore } from "../store/authStore";
 import { Link } from "react-router-dom";
+import useDayTasks, { formatDateUTC } from '../lib/useDayTasks';
 
 const WeeklySummary = () => {
   const {
@@ -60,22 +61,25 @@ const WeeklySummary = () => {
   // Recent transactions (last 3 for this week)
   const recentWeekTx = weekTransactions.slice(-3).reverse();
 
-  // Prepare daily buckets
-  const dailyMinutes = Array(7).fill(0);
+  // Use backend dayTasks for completed fitness tasks per day
+  const { dayTasks } = useDayTasks();
+  const dailyTaskCounts = Array(7).fill(0);
   const dailyCalories = Array(7).fill(0);
-  (weeklyLogs || []).forEach(log => {
-    const logDate = new Date(log.date);
-    if (logDate >= weekStart && logDate <= weekEnd) {
-      const idx = (logDate.getDay() - weekStart.getDay() + 7) % 7;
-      dailyMinutes[idx] += log.duration || 0;
-      dailyCalories[idx] += log.calories || 0;
-    }
-  });
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    const dateStr = formatDateUTC(d);
+    const completed = dayTasks[dateStr]?.completed || [];
+    dailyTaskCounts[i] = completed.length > 0 ? completed.length : 0;
+    // Optionally, sum calories if you want to show them
+    // dailyCalories[i] = completed.reduce((sum, t) => sum + (t.calories || 0), 0);
+  }
 
-  // For bar chart: max 5h (300min), 3h (180min), 1h (60min)
-  const maxBarHeight = 60;
-  const maxMinutes = 300;
-  const barHeights = dailyMinutes.map(mins => Math.round((mins / maxMinutes) * maxBarHeight));
+  // For bar chart: y-axis is max number of completed tasks in a day (min 1 for visibility)
+  const maxTasks = Math.max(1, ...dailyTaskCounts);
+  const maxBarHeight = 80;
+  // Scale bar height to maxTasks
+  const barHeights = dailyTaskCounts.map(count => count === 0 ? 0 : Math.max(10, Math.round((count / maxTasks) * maxBarHeight)));
 
   // For line chart: calories (max 2200, 2000, 1800)
   const maxCal = 2200;
@@ -108,36 +112,56 @@ const WeeklySummary = () => {
                   {/* Days Worked Out (Bar Chart) */}
                   <div>
                     <div className="font-semibold mb-2">Days Worked Out:</div>
-                    <div className="h-32">
-                      {/* Bar Chart with Y-axis values for hours */}
-                      <svg width="100%" height="100" viewBox="0 0 210 100">
-                        {/* Y axis lines */}
-                        <line x1="30" y1="20" x2="210" y2="20" stroke="#ccc" />
-                        <line x1="30" y1="50" x2="210" y2="50" stroke="#ccc" />
-                        <line x1="30" y1="80" x2="210" y2="80" stroke="#ccc" />
-                        {/* Y axis labels */}
-                        <text x="0" y="25" fontSize="12">5h</text>
-                        <text x="0" y="55" fontSize="12">3h</text>
-                        <text x="0" y="85" fontSize="12">1h</text>
-                        {/* Bars for each day (S, M, T, W, T, F, S) - dynamic */}
-                        {barHeights.map((h, i) => (
-                          <rect
-                            key={i}
-                            x={40 + i * 30}
-                            y={80 - h}
-                            width="20"
-                            height={h}
-                            fill="#22c55e"
-                          />
-                        ))}
-                        {/* Day labels */}
-                        <text x="50" y="95" textAnchor="middle" fontSize="12">S</text>
-                        <text x="80" y="95" textAnchor="middle" fontSize="12">M</text>
-                        <text x="110" y="95" textAnchor="middle" fontSize="12">T</text>
-                        <text x="140" y="95" textAnchor="middle" fontSize="12">W</text>
-                        <text x="170" y="95" textAnchor="middle" fontSize="12">T</text>
-                        <text x="200" y="95" textAnchor="middle" fontSize="12">F</text>
-                      </svg>
+                    <div className="h-48 w-full flex justify-center items-end">
+                      {dailyTaskCounts.every(count => count === 0) ? (
+                        <div className="text-base-content/60 text-center mt-8">No completed fitness tasks this week.</div>
+                      ) : (
+                        <div style={{ marginTop: 4, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', height: 160 }}>
+                          <svg width={340} height={130} viewBox="0 0 340 130">
+                          {/* Y axis lines and labels (stretched y-axis, more vertical space) */}
+                          {/* Show y-axis for 1 to maxTasks */}
+                          {Array.from({length: maxTasks}, (_, i) => {
+                            // Distribute y positions evenly from 110 (bottom) to 20 (top)
+                            const yStart = 110;
+                            const yEnd = 20;
+                            const y = yStart - ((yStart - yEnd) / maxTasks) * (i + 1);
+                            const label = i + 1;
+                            return (
+                              <g key={label}>
+                                <line x1="45" y1={y} x2="285" y2={y} stroke="#ccc" />
+                                <text x="18" y={y+5} fontSize="10" fontWeight="bold">{label}</text>
+                              </g>
+                            );
+                          })}
+                          {/* Bars for each day (S, M, T, W, T, F, S) - dynamic */}
+                          {barHeights.map((h, i) => {
+                            // Stretch bar heights to fit new y-axis
+                            const yStart = 110;
+                            const yEnd = 20;
+                            const maxBarHeight = yStart - yEnd;
+                            const barHeight = (h / maxTasks) * maxBarHeight;
+                            return (
+                              <rect
+                                key={i}
+                                x={58 + i * 32}
+                                y={yStart - barHeight}
+                                width="18"
+                                height={barHeight}
+                                fill="#22c55e"
+                              />
+                            );
+                          })}
+                          {/* Day labels */}
+                          <text x="67" y="125" textAnchor="middle" fontSize="13">S</text>
+                          <text x="99" y="125" textAnchor="middle" fontSize="13">M</text>
+                          <text x="131" y="125" textAnchor="middle" fontSize="13">T</text>
+                          <text x="163" y="125" textAnchor="middle" fontSize="13">W</text>
+                          <text x="195" y="125" textAnchor="middle" fontSize="13">T</text>
+                          <text x="227" y="125" textAnchor="middle" fontSize="13">F</text>
+                          <text x="259" y="125" textAnchor="middle" fontSize="13">S</text>
+                        </svg>
+                        </div>
+                      )}
                     </div>
                   </div>
                   {/* Calories (Line Chart) */}

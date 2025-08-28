@@ -12,6 +12,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors"; // Import CORS
 
 import mealPlanRoutes from "./routes/mealPlan.route.js";
+import dayTaskRoutes from "../routes/dayTask.route.js"; // Import dayTask routes
 
 import FoodItem from "./model/FoodItem.js";
 
@@ -42,6 +43,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/user-info", userInfoRoutes);
 app.use("/api/chatbot", chatbotRoutes);
 app.use("/api/workouts", workoutRoutes);
+app.use("/api/day-tasks", dayTaskRoutes); // Register dayTask routes
 
 // Meal Plan routes
 app.use("/api/meal-plans", mealPlanRoutes);

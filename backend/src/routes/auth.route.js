@@ -6,7 +6,7 @@ import {
     checkAuth,
 } from "../controllers/authCont.js";
 import { updateUserProfile, getUserProfile } from "../controllers/myInfoController.js";
-import { verifyToken } from "../middleware/verifyToken.js";
+import verifyToken from "../middleware/verifyToken.js";
 
 const router = express.Router();
 

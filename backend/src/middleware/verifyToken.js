@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-export const verifyToken = (req, res, next) => {
+const verifyToken = (req, res, next) => {
   let token = null;
 
   console.log("=== Token Verification Debug ===");
@@ -39,3 +39,4 @@ export const verifyToken = (req, res, next) => {
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
+export default verifyToken;
