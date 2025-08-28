@@ -26,16 +26,12 @@ const WeeklySummary = () => {
   const calorieBalance = getCalorieBalance();
   const dailyProgress = getDailyProgress();
 
-  // --- Weekly Date Range (Sunday to Saturday) ---
+  // --- Weekly Date Range (Sunday to Saturday, UTC) ---
   const weekDays = ["S", "M", "T", "W", "T", "F", "S"];
   const today = new Date();
-  const dayOfWeek = today.getDay(); // 0 (Sun) - 6 (Sat)
-  const weekStart = new Date(today);
-  weekStart.setDate(today.getDate() - dayOfWeek);
-  weekStart.setHours(0,0,0,0);
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekStart.getDate() + 6);
-  weekEnd.setHours(23,59,59,999);
+  const utcDayOfWeek = today.getUTCDay(); // 0 (Sun) - 6 (Sat)
+  const weekStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - utcDayOfWeek));
+  const weekEnd = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - utcDayOfWeek + 6, 23, 59, 59, 999));
 
   useEffect(() => {
     fetchWeeklyLogs();
@@ -44,8 +40,8 @@ const WeeklySummary = () => {
 
   // --- Weekly Finances Aggregation ---
   const weekTransactions = (transactions || []).filter(tx => {
-    const txDate = new Date(tx.date);
-    return txDate >= weekStart && txDate <= weekEnd;
+  const txDate = new Date(tx.date);
+  return txDate >= weekStart && txDate <= weekEnd;
   });
   const totalSpent = weekTransactions.filter(tx => tx.type === 'expense').reduce((sum, tx) => sum + tx.amount, 0);
   const totalSaved = weekTransactions.filter(tx => tx.type === 'income').reduce((sum, tx) => sum + tx.amount, 0);
@@ -54,7 +50,8 @@ const WeeklySummary = () => {
   const dailySaved = Array(7).fill(0);
   weekTransactions.forEach(tx => {
     const txDate = new Date(tx.date);
-    const idx = (txDate.getDay() - weekStart.getDay() + 7) % 7;
+    // Use UTC day index for consistency
+    const idx = (txDate.getUTCDay() - weekStart.getUTCDay() + 7) % 7;
     if (tx.type === 'expense') dailySpent[idx] += tx.amount;
     if (tx.type === 'income') dailySaved[idx] += tx.amount;
   });
@@ -66,11 +63,11 @@ const WeeklySummary = () => {
   const dailyTaskCounts = Array(7).fill(0);
   const dailyCalories = Array(7).fill(0);
   for (let i = 0; i < 7; i++) {
-    const d = new Date(weekStart);
-    d.setDate(weekStart.getDate() + i);
-    const dateStr = formatDateUTC(d);
-    const completed = dayTasks[dateStr]?.completed || [];
-    dailyTaskCounts[i] = completed.length > 0 ? completed.length : 0;
+  const d = new Date(weekStart);
+  d.setUTCDate(weekStart.getUTCDate() + i);
+  const dateStr = formatDateUTC(d);
+  const completed = dayTasks[dateStr]?.completed || [];
+  dailyTaskCounts[i] = completed.length > 0 ? completed.length : 0;
     // Optionally, sum calories if you want to show them
     // dailyCalories[i] = completed.reduce((sum, t) => sum + (t.calories || 0), 0);
   }
@@ -113,86 +110,123 @@ const WeeklySummary = () => {
                   <div>
                     <div className="font-semibold mb-2">Days Worked Out:</div>
                     <div className="h-48 w-full flex justify-center items-end">
-                      {dailyTaskCounts.every(count => count === 0) ? (
-                        <div className="text-base-content/60 text-center mt-8">No completed fitness tasks this week.</div>
-                      ) : (
-                        <div style={{ marginTop: 4, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', height: 160 }}>
-                          <svg width={340} height={130} viewBox="0 0 340 130">
-                          {/* Y axis lines and labels (stretched y-axis, more vertical space) */}
-                          {/* Show y-axis for 1 to maxTasks */}
-                          {Array.from({length: maxTasks}, (_, i) => {
-                            // Distribute y positions evenly from 110 (bottom) to 20 (top)
-                            const yStart = 110;
-                            const yEnd = 20;
-                            const y = yStart - ((yStart - yEnd) / maxTasks) * (i + 1);
-                            const label = i + 1;
-                            return (
-                              <g key={label}>
-                                <line x1="45" y1={y} x2="285" y2={y} stroke="#ccc" />
-                                <text x="18" y={y+5} fontSize="10" fontWeight="bold">{label}</text>
-                              </g>
-                            );
-                          })}
-                          {/* Bars for each day (S, M, T, W, T, F, S) - dynamic */}
-                          {barHeights.map((h, i) => {
-                            // Stretch bar heights to fit new y-axis
-                            const yStart = 110;
-                            const yEnd = 20;
-                            const maxBarHeight = yStart - yEnd;
-                            const barHeight = (h / maxTasks) * maxBarHeight;
-                            return (
-                              <rect
-                                key={i}
-                                x={58 + i * 32}
-                                y={yStart - barHeight}
-                                width="18"
-                                height={barHeight}
-                                fill="#22c55e"
-                              />
-                            );
-                          })}
-                          {/* Day labels */}
-                          <text x="67" y="125" textAnchor="middle" fontSize="13">S</text>
-                          <text x="99" y="125" textAnchor="middle" fontSize="13">M</text>
-                          <text x="131" y="125" textAnchor="middle" fontSize="13">T</text>
-                          <text x="163" y="125" textAnchor="middle" fontSize="13">W</text>
-                          <text x="195" y="125" textAnchor="middle" fontSize="13">T</text>
-                          <text x="227" y="125" textAnchor="middle" fontSize="13">F</text>
-                          <text x="259" y="125" textAnchor="middle" fontSize="13">S</text>
-                        </svg>
-                        </div>
-                      )}
+                      {(() => {
+                        const [hoveredBar, setHoveredBar] = React.useState(null);
+                        // Helper to get completed items for a given day index
+                        const getCompletedForDay = (i) => {
+                          const d = new Date(weekStart);
+                          d.setUTCDate(weekStart.getUTCDate() + i);
+                          const dateStr = formatDateUTC(d);
+                          return (dayTasks[dateStr]?.completed || []);
+                        };
+                        return dailyTaskCounts.every(count => count === 0) ? (
+                          <div className="text-base-content/60 text-center mt-8">No completed fitness tasks this week.</div>
+                        ) : (
+                          <div style={{ marginTop: 4, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', height: 160, position: 'relative' }}>
+                            <svg width={340} height={130} viewBox="0 0 340 130">
+                              {/* Y axis lines and labels (stretched y-axis, more vertical space) */}
+                              {Array.from({length: maxTasks}, (_, i) => {
+                                const yStart = 110;
+                                const yEnd = 20;
+                                const y = yStart - ((yStart - yEnd) / maxTasks) * (i + 1);
+                                const label = i + 1;
+                                return (
+                                  <g key={label}>
+                                    <line x1="45" y1={y} x2="285" y2={y} stroke="#ccc" />
+                                    <text x="18" y={y+5} fontSize="10" fontWeight="bold">{label}</text>
+                                  </g>
+                                );
+                              })}
+                              {/* Bars for each day (S, M, T, W, T, F, S) - dynamic */}
+                              {barHeights.map((h, i) => {
+                                const yStart = 110;
+                                const yEnd = 20;
+                                const maxBarHeight = yStart - yEnd;
+                                const barHeight = (h / maxTasks) * maxBarHeight;
+                                return (
+                                  <rect
+                                    key={i}
+                                    x={58 + i * 32}
+                                    y={yStart - barHeight}
+                                    width="18"
+                                    height={barHeight}
+                                    fill="#22c55e"
+                                    style={{ cursor: 'pointer' }}
+                                    onMouseEnter={() => setHoveredBar(i)}
+                                    onMouseLeave={() => setHoveredBar(null)}
+                                  />
+                                );
+                              })}
+                              {/* Day labels */}
+                              <text x="67" y="125" textAnchor="middle" fontSize="13">S</text>
+                              <text x="99" y="125" textAnchor="middle" fontSize="13">M</text>
+                              <text x="131" y="125" textAnchor="middle" fontSize="13">T</text>
+                              <text x="163" y="125" textAnchor="middle" fontSize="13">W</text>
+                              <text x="195" y="125" textAnchor="middle" fontSize="13">T</text>
+                              <text x="227" y="125" textAnchor="middle" fontSize="13">F</text>
+                              <text x="259" y="125" textAnchor="middle" fontSize="13">S</text>
+                            </svg>
+                            {/* Tooltip for hovered bar */}
+                            {hoveredBar !== null && (
+                              <div style={{
+                                position: 'absolute',
+                                left: 58 + hoveredBar * 32 - 30,
+                                top: 10,
+                                background: 'rgba(30,41,59,0.97)',
+                                color: '#fff',
+                                borderRadius: 8,
+                                padding: '10px 14px',
+                                minWidth: 160,
+                                zIndex: 10,
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                              }}>
+                                <div style={{ fontWeight: 600, marginBottom: 4 }}>Completed ({weekDays[hoveredBar]})</div>
+                                {getCompletedForDay(hoveredBar).length === 0 ? (
+                                  <div style={{ color: '#cbd5e1' }}>No items</div>
+                                ) : (
+                                  <ul style={{ paddingLeft: 16, margin: 0 }}>
+                                    {getCompletedForDay(hoveredBar).map((item, idx) => (
+                                      <li key={item.id || idx} style={{ fontSize: 13 }}>
+                                        {item.name} <span style={{ color: '#38bdf8', fontSize: 11 }}>({item.type})</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
-                  {/* Calories (Line Chart) */}
+                  {/* Calories (Line Chart) - now same size as bar chart */}
                   <div>
                     <div className="font-semibold mb-2">Calories:</div>
-                    <div className="h-32">
-                      {/* Line Chart with Y-axis values for calories */}
-                      <svg width="100%" height="100" viewBox="0 0 210 100">
+                    <div className="h-48 w-full flex justify-center items-end">
+                      <svg width={340} height={130} viewBox="0 0 340 130">
                         {/* Y axis lines */}
-                        <line x1="30" y1="20" x2="210" y2="20" stroke="#ccc" />
-                        <line x1="30" y1="50" x2="210" y2="50" stroke="#ccc" />
-                        <line x1="30" y1="80" x2="210" y2="80" stroke="#ccc" />
+                        <line x1="45" y1="20" x2="285" y2="20" stroke="#ccc" />
+                        <line x1="45" y1="65" x2="285" y2="65" stroke="#ccc" />
+                        <line x1="45" y1="110" x2="285" y2="110" stroke="#ccc" />
                         {/* Y axis labels */}
-                        <text x="0" y="25" fontSize="12">2.2k</text>
-                        <text x="0" y="55" fontSize="12">2k</text>
-                        <text x="0" y="85" fontSize="12">1.8k</text>
+                        <text x="18" y="25" fontSize="12">2.2k</text>
+                        <text x="18" y="70" fontSize="12">2k</text>
+                        <text x="18" y="115" fontSize="12">1.8k</text>
                         {/* Line for calories - dynamic */}
                         <polyline
-                          points={calY.map((y, i) => `${40 + i * 30},${y}`).join(' ')}
+                          points={calY.map((y, i) => `${58 + i * 32},${y}` ).join(' ')}
                           fill="none"
                           stroke="#22c55e"
                           strokeWidth="3"
                         />
                         {/* Day labels */}
-                        <text x="50" y="95" textAnchor="middle" fontSize="12">S</text>
-                        <text x="80" y="95" textAnchor="middle" fontSize="12">M</text>
-                        <text x="110" y="95" textAnchor="middle" fontSize="12">T</text>
-                        <text x="140" y="95" textAnchor="middle" fontSize="12">W</text>
-                        <text x="170" y="95" textAnchor="middle" fontSize="12">T</text>
-                        <text x="200" y="95" textAnchor="middle" fontSize="12">F</text>
-                        <text x="230" y="95" textAnchor="middle" fontSize="12">S</text>
+                        <text x="67" y="125" textAnchor="middle" fontSize="13">S</text>
+                        <text x="99" y="125" textAnchor="middle" fontSize="13">M</text>
+                        <text x="131" y="125" textAnchor="middle" fontSize="13">T</text>
+                        <text x="163" y="125" textAnchor="middle" fontSize="13">W</text>
+                        <text x="195" y="125" textAnchor="middle" fontSize="13">T</text>
+                        <text x="227" y="125" textAnchor="middle" fontSize="13">F</text>
+                        <text x="259" y="125" textAnchor="middle" fontSize="13">S</text>
                       </svg>
                     </div>
                   </div>

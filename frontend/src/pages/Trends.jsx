@@ -107,7 +107,7 @@ function PendingCompletedSection() {
       {/* Pending/Completed Boxes for selected date */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-base-content">
-          Fitness Tasks for {selectedDate.toLocaleDateString()}
+          Fitness Tasks for {formatDateUTC(selectedDate)} (UTC)
         </h2>
         <button
           className="btn btn-primary btn-circle"
@@ -271,7 +271,7 @@ function PendingCompletedSection() {
         <div className="modal modal-open">
           <div className="modal-box">
             <h3 className="font-bold text-lg mb-4">
-              Tasks for {selectedDate.toLocaleDateString()}
+              Tasks for {formatDateUTC(selectedDate)} (UTC)
             </h3>
             <div className="mb-4">
               <div className="font-semibold mb-2">Pending:</div>
