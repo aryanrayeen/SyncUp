@@ -94,29 +94,37 @@ const Goals = () => {
     });
   };
 
-  const todayStr = new Date().toISOString().slice(0, 10);
-  // Only show completed goals for today
-  const completedGoals = goals.filter(goal => {
-    if (!goal.completed) return false;
-    const dateStr = goal.completionDate
-      ? new Date(goal.completionDate).toISOString().slice(0, 10)
-      : new Date(goal.updatedAt).toISOString().slice(0, 10);
-    return dateStr === todayStr;
-  });
-  // Only show pending goals for today (strict match)
-  const pendingGoals = goals.filter(goal => {
-    if (goal.completed) return false;
-    if (goal.date) {
-      return goal.date === todayStr;
-    }
-    // fallback: createdAt is today
-    return new Date(goal.createdAt).toISOString().slice(0, 10) === todayStr;
-  });
+  // Show only today's goals in the pending/completed boxes
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0, 10);
+  const isToday = (date) => {
+    const d = new Date(date);
+    return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
+  };
+  const completedGoals = goals.filter(goal => goal.completed && isToday(goal.date || goal.completionDate || goal.updatedAt));
+  const pendingGoals = goals.filter(goal => !goal.completed && isToday(goal.date || goal.createdAt));
   // Debug: log all goals and their date fields for troubleshooting
   console.log('All goals:', goals.map(g => ({ title: g.title, date: g.date, createdAt: g.createdAt, completed: g.completed })));
   console.log('Today string:', todayStr);
   console.log('Pending goals for today:', pendingGoals.map(g => ({ title: g.title, date: g.date, createdAt: g.createdAt })));
-  const stats = getGoalStats();
+  // Filter goals for current month
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  const monthlyGoals = goals.filter(g => {
+    const dateObj = g.date ? new Date(g.date) : new Date(g.createdAt);
+    return dateObj.getFullYear() === currentYear && dateObj.getMonth() === currentMonth;
+  });
+  const monthlyCompleted = monthlyGoals.filter(g => g.completed).length;
+  const monthlyTotal = monthlyGoals.length;
+  const monthlyPending = monthlyTotal - monthlyCompleted;
+  const monthlySuccessRate = monthlyTotal > 0 ? Math.round((monthlyCompleted / monthlyTotal) * 100) : 0;
+  const stats = {
+    total: monthlyTotal,
+    completed: monthlyCompleted,
+    pending: monthlyPending,
+    successRate: monthlySuccessRate
+  };
 
   if (isLoading && goals.length === 0) {
     return (
