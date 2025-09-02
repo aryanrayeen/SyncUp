@@ -27,7 +27,9 @@ const Achievements = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
-                <h2 className="text-xl font-semibold mb-4 text-success">Earned Achievements</h2>
+                <h2 className="text-xl font-semibold mb-4 text-success">
+                  Earned Achievements ({earned.length})
+                </h2>
                 {earned.length === 0 ? (
                   <p className="text-base-content/60">No achievements earned yet.</p>
                 ) : (
@@ -46,7 +48,9 @@ const Achievements = () => {
                 )}
               </div>
               <div>
-                <h2 className="text-xl font-semibold mb-4 text-warning">Locked Achievements</h2>
+                <h2 className="text-xl font-semibold mb-4 text-warning">
+                  Locked Achievements ({locked.length})
+                </h2>
                 {locked.length === 0 ? (
                   <p className="text-base-content/60">All achievements earned!</p>
                 ) : (

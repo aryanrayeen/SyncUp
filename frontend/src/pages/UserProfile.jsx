@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { User, Edit, Save, X, Camera, Mail, Phone, MapPin, Calendar } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useFitnessStore } from '../store/fitnessStore';
+import { useAchievementsStore } from '../store/achievementsStore';
 
 const UserProfile = () => {
+  const { achievements, fetchAchievements, isLoading: achievementsLoading } = useAchievementsStore();
   const { user, updateUserProfile, updateUser } = useAuthStore();
   const { userInfo, updateUserInfo, fetchUserInfo, isLoading } = useFitnessStore();
   const [isEditing, setIsEditing] = useState(false);
@@ -19,6 +21,11 @@ const UserProfile = () => {
     age: 0,
     bmi: 0
   });
+
+  // Fetch achievements on mount
+  useEffect(() => {
+    fetchAchievements();
+  }, [fetchAchievements]);
 
   // Handle profile picture upload
   const handleProfilePictureChange = async (e) => {
@@ -196,6 +203,7 @@ const UserProfile = () => {
   }
 
   return (
+
     <div className="p-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-base-content">Profile</h1>
@@ -203,7 +211,7 @@ const UserProfile = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile Card */}
+        {/* Profile Card + Earned Achievements */}
         <div className="lg:col-span-1">
           <div className="card bg-base-200 shadow-lg">
             <div className="card-body text-center">
@@ -255,6 +263,31 @@ const UserProfile = () => {
                   <div className="stat-title">Goals Completed</div>
                   <div className="stat-value text-lg">{userInfo?.goalsCompleted || 0}</div>
                 </div>
+              </div>
+              {/* Earned Achievements Section */}
+              <div className="mt-6 text-left">
+                <h3 className="text-lg font-bold mb-2 text-success">
+                  Earned Achievements ({achievements.filter(a => a.earned).length}/{achievements.length})
+                </h3>
+                {achievementsLoading ? (
+                  <div className="loading loading-spinner loading-sm text-success mx-auto" />
+                ) : (
+                  <ul className="space-y-2">
+                    {achievements.filter(a => a.earned).length === 0 ? (
+                      <li className="text-base-content/60">No achievements earned yet.</li>
+                    ) : (
+                      achievements.filter(a => a.earned).map(a => (
+                        <li key={a._id} className="flex items-center gap-3 p-2 bg-success/10 rounded-lg border-l-4 border-success">
+                          <span className="text-2xl">{a.icon}</span>
+                          <div>
+                            <div className="font-bold text-success">{a.name}</div>
+                            <div className="text-xs text-base-content/50">Earned: {a.earnedAt ? new Date(a.earnedAt).toLocaleDateString() : '—'}</div>
+                          </div>
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                )}
               </div>
             </div>
           </div>
