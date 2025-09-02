@@ -48,6 +48,9 @@ app.use("/api/workouts", workoutRoutes);
 app.use("/api/day-tasks", dayTaskRoutes); // Register dayTask routes
 app.use("/api/achievements", achievementRoutes);
 
+import weightRoutes from "./routes/weight.route.js";
+app.use("/api/weight", weightRoutes);
+
 // Meal Plan routes
 app.use("/api/meal-plans", mealPlanRoutes);
 

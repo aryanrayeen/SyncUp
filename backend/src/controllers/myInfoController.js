@@ -1,5 +1,6 @@
 import Infos from '../model/Infos.js';
 import { User } from '../model/usermodel.js';
+import WeightLog from '../../model/WeightLog.js';
 
 // Get user's information
 export const getUserInfo = async (req, res) => {
@@ -58,6 +59,9 @@ export const updateUserInfo = async (req, res) => {
 
         // Check if user info already exists
         const existingInfo = await Infos.findOne({ userId });
+
+    // Log weight update
+    await WeightLog.create({ user: userId, weight, date: new Date() });
 
         if (existingInfo) {
             // Update existing info

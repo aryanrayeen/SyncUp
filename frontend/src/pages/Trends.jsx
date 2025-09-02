@@ -396,39 +396,40 @@ function PendingCompletedSection() {
 
 // --- End of PendingCompletedSection, start of Trends component ---
 const Trends = () => {
-  const { userInfo, fetchUserInfo, isLoading, error, getBMICategory } = useFitnessStore();
+  const { userInfo, fetchUserInfo, isLoading, error, getBMICategory, weightHistory, fetchWeightHistory } = useFitnessStore();
+  useEffect(() => {
+    fetchWeightHistory();
+  }, [fetchWeightHistory]);
 
   useEffect(() => {
     fetchUserInfo();
   }, [fetchUserInfo]);
 
   // Generate sample weight progress data based on current weight
-  const generateWeightTrendData = () => {
-    if (!userInfo) return { labels: [], datasets: [] };
-
-    const currentWeight = userInfo.weight;
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-
-    // Generate a realistic weight loss progression
-    const weightData = months.map((_, index) => {
-      return currentWeight + (5 - index); // Shows 5kg loss over 6 months
+  const weightTrendData = React.useMemo(() => {
+    if (!weightHistory || weightHistory.length === 0) {
+      return { labels: [], datasets: [] };
+    }
+    // Sort logs by date
+    const sorted = [...weightHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const labels = sorted.map(log => {
+      const d = new Date(log.date);
+      return d.toLocaleString('default', { month: 'short', year: 'numeric' });
     });
-
+    const data = sorted.map(log => log.weight);
     return {
-      labels: months,
+      labels,
       datasets: [
         {
           label: 'Weight (kg)',
-          data: weightData,
+          data,
           borderColor: 'rgb(34, 197, 94)',
           backgroundColor: 'rgba(34, 197, 94, 0.1)',
           tension: 0.4,
         },
       ],
     };
-  };
-
-  const weightTrendData = generateWeightTrendData();
+  }, [weightHistory]);
 
   const chartOptions = {
     responsive: true,

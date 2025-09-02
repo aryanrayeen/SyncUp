@@ -2,6 +2,19 @@ import { create } from 'zustand';
 import api from '../lib/axios';
 
 export const useFitnessStore = create((set, get) => ({
+  // Weight history for graph
+  weightHistory: [],
+  fetchWeightHistory: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await api.get('/weight/history');
+      set({ weightHistory: response.data.weights || [], isLoading: false });
+      return response.data.weights;
+    } catch (error) {
+      set({ error: error.message, isLoading: false });
+      return [];
+    }
+  },
   // User fitness data
   userInfo: null,
   isLoading: false,
