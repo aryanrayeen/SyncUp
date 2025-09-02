@@ -16,7 +16,7 @@ async function fetchWeekTasks(weekStart, setDayTasks) {
   const requests = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date(weekStart);
-    d.setDate(weekStart.getDate() + i);
+    d.setUTCDate(weekStart.getUTCDate() + i);
     const dateStr = formatDateUTC(d);
     requests.push(
       api.get(`/day-tasks/${dateStr}`)
@@ -60,9 +60,22 @@ export default function useDayTasks() {
   const complete = useCallback(async (date, item) => {
     const dateStr = formatDateUTC(date);
     const prevDay = dayTasks[dateStr] || { pending: [], completed: [] };
+    let completedItem = { ...item };
+    // If completing a workout, attach its plan (exercises) if not present
+    if (item.type === 'workout' && !item.plan) {
+      try {
+        // Try to fetch workout plan details from API (assume item.id is plan id)
+        const res = await api.get(`/workout-plan/${item.id}`);
+        if (res.data && Array.isArray(res.data.exercises)) {
+          completedItem.plan = res.data.exercises;
+        }
+      } catch (err) {
+        console.warn('Could not fetch workout plan for completed workout:', err);
+      }
+    }
     const newDay = {
       pending: prevDay.pending.filter(i => i.id !== item.id),
-      completed: [...prevDay.completed, item],
+      completed: [...prevDay.completed, completedItem],
     };
     await saveDay(date, newDay);
   }, [dayTasks]);

@@ -60,25 +60,31 @@ const WeeklySummary = () => {
 
   // Use backend dayTasks for completed fitness tasks per day
   const { dayTasks } = useDayTasks();
-  const dailyTaskCounts = Array(7).fill(0);
-  const dailyCalories = Array(7).fill(0);
-  for (let i = 0; i < 7; i++) {
+  // Calculate dailyTaskCounts: count unique completed fitness tasks (workout and meal) per day
+  const dailyTaskCounts = Array.from({ length: 7 }, (_, i) => {
+  const d = new Date(weekStart);
+  d.setUTCDate(weekStart.getUTCDate() + i);
+  const dateStr = formatDateUTC(d);
+  const completed = dayTasks[dateStr]?.completed || [];
+  // Count all completed workouts and meals for the day
+  return completed.filter(t => t.type === 'workout' || t.type === 'meal').length;
+  });
+  // Calculate dailyCalories: sum calories for completed meal plans only
+  const dailyCalories = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);
     d.setUTCDate(weekStart.getUTCDate() + i);
     const dateStr = formatDateUTC(d);
     const completed = dayTasks[dateStr]?.completed || [];
-    dailyTaskCounts[i] = completed.length > 0 ? completed.length : 0;
-    // Sum calories for completed meal plans only
-    dailyCalories[i] = completed
+    return completed
       .filter(t => t.type === 'meal' && t.calories)
       .reduce((sum, t) => sum + t.calories, 0);
-  }
+  });
 
   // For bar chart: y-axis is max number of completed tasks in a day (min 1 for visibility)
-  const maxTasks = Math.max(1, ...dailyTaskCounts);
-  const maxBarHeight = 80;
-  // Scale bar height to maxTasks
-  const barHeights = dailyTaskCounts.map(count => count === 0 ? 0 : Math.max(10, Math.round((count / maxTasks) * maxBarHeight)));
+  // Each bar's height is directly proportional to its count, visually independent
+  const pixelsPerTask = 30; // 30px per completed task
+  const maxBarHeight = 120; // cap bar height for very high counts
+  const barHeights = dailyTaskCounts.map(count => Math.min(count * pixelsPerTask, maxBarHeight));
 
   // For line chart: calories (max 2200, 2000, 1800)
   const maxCal = 2200;
@@ -127,12 +133,13 @@ const WeeklySummary = () => {
                         ) : (
                           <div style={{ marginTop: 4, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', height: 160, position: 'relative' }}>
                             <svg width={340} height={130} viewBox="0 0 340 130">
-                              {/* Y axis lines and labels (stretched y-axis, more vertical space) */}
-                              {Array.from({length: maxTasks}, (_, i) => {
+                              {/* Fixed Y axis lines and labels for 1–5 tasks */}
+                              {[1,2,3,4,5].map(label => {
                                 const yStart = 110;
                                 const yEnd = 20;
-                                const y = yStart - ((yStart - yEnd) / maxTasks) * (i + 1);
-                                const label = i + 1;
+                                const maxBarHeight = yStart - yEnd;
+                                // Position line for each label
+                                const y = yStart - ((label / 5) * maxBarHeight);
                                 return (
                                   <g key={label}>
                                     <line x1="45" y1={y} x2="285" y2={y} stroke="#ccc" />
@@ -141,18 +148,19 @@ const WeeklySummary = () => {
                                 );
                               })}
                               {/* Bars for each day (S, M, T, W, T, F, S) - dynamic */}
-                              {barHeights.map((h, i) => {
+                              {barHeights.map((barHeight, i) => {
                                 const yStart = 110;
                                 const yEnd = 20;
                                 const maxBarHeight = yStart - yEnd;
-                                const barHeight = (h / maxTasks) * maxBarHeight;
+                                // Cap bar height to maxBarHeight
+                                const cappedBarHeight = Math.min(barHeight, maxBarHeight);
                                 return (
                                   <rect
                                     key={i}
                                     x={58 + i * 32}
-                                    y={yStart - barHeight}
+                                    y={yStart - cappedBarHeight}
                                     width="18"
-                                    height={barHeight}
+                                    height={cappedBarHeight}
                                     fill="#22c55e"
                                     style={{ cursor: 'pointer' }}
                                     onMouseEnter={() => setHoveredBar(i)}
