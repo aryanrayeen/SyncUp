@@ -8,6 +8,7 @@ import Goals from './pages/Goals'
 import ExpensesPage from './pages/ExpensesPage'
 import UserProfile from './pages/UserProfile'
 import WeeklySummary from './pages/WeeklySummary'
+import Achievements from './pages/Achievements'
 import ProfileSetupPage from './pages/ProfileSetupPage'
 import SignUpPage from "./pages/SignUpPage";
 import LoginPage from "./pages/LoginPage";
@@ -225,6 +226,14 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <WeeklySummary />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/achievements"
+                    element={
+                        <ProtectedRoute>
+                            <Achievements />
                         </ProtectedRoute>
                     }
                 />

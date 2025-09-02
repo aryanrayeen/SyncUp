@@ -20,29 +20,14 @@ const Navbar = () => {
 				<a className="btn btn-ghost text-xl font-bold italic text-primary">SyncUp!</a>
 			</div>
 			
-			{/* Search Bar */}
+			{/* Notifications */}
 			<div className="flex-none gap-2">
-				<div className="form-control">
-					<div className="input-group">
-						<input 
-							type="text" 
-							placeholder="Search..." 
-							className="input input-bordered input-sm w-48" 
-						/>
-						<button className="btn btn-square btn-sm">
-							<Search className="w-4 h-4" />
-						</button>
-					</div>
-				</div>
-				
-				{/* Notifications */}
 				<button className="btn btn-ghost btn-circle">
 					<div className="indicator">
 						<Bell className="w-5 h-5" />
 						<span className="badge badge-xs badge-primary indicator-item"></span>
 					</div>
 				</button>
-				
 				{/* User Profile Dropdown */}
 				<div className="dropdown dropdown-end">
 					<div tabIndex={0} role="button" className="btn btn-ghost btn-circle flex items-center justify-center">
@@ -64,13 +49,15 @@ const Navbar = () => {
 						<li>
 							<a className="justify-between">
 								{user?.name}
-								{/* <span className="badge badge-primary">Pro</span> */}
 							</a>
 						</li>
 						<li><a>Settings</a></li>
 						<li><a>Help</a></li>
 						<li>
 							<Link to="/weekly-summary">Weekly Summary</Link>
+						</li>
+						<li>
+							<Link to="/achievements">Achievements</Link>
 						</li>
 						<li>
 							<button onClick={handleLogout} className="text-error">

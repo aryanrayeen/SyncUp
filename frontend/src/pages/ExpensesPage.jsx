@@ -406,18 +406,20 @@ const ExpensesPage = () => {
           <div className="card-body">
             <h3 className="card-title mb-4">Transactions</h3>
             {(() => {
-              const dateToShow = selectedDate || today;
-              const year = dateToShow.getFullYear();
-              const month = String(dateToShow.getMonth() + 1).padStart(2, '0');
-              const day = String(dateToShow.getDate()).padStart(2, '0');
-              const dateStr = `${year}-${month}-${day}`;
-              const txs = txByDate[dateStr] || [];
+              // Show all transactions for the current month
+              const now = new Date();
+              const currentMonth = now.getMonth();
+              const currentYear = now.getFullYear();
+              const monthlyTxs = allTransactions.filter(tx => {
+                const txDate = new Date(tx.date);
+                return txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear;
+              });
               return (
                 <>
-                  <h4 className="mb-2 font-semibold">Transactions for {formatDate(dateToShow)}</h4>
-                  {txs.length ? (
+                  <h4 className="mb-2 font-semibold">Transactions for {now.toLocaleString('en-US', { month: 'long', year: 'numeric' })}</h4>
+                  {monthlyTxs.length ? (
                     <ul className="divide-y">
-                      {txs.map(tx => (
+                      {monthlyTxs.map(tx => (
                         <li key={tx._id} className="py-2 flex justify-between items-center">
                           <div>
                             <span className={`font-bold ${tx.type === 'income' ? 'text-success' : 'text-error'}`}>{tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}</span>
@@ -432,7 +434,7 @@ const ExpensesPage = () => {
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-base-content/60">No transactions for this date.</p>
+                    <p className="text-base-content/60">No transactions for this month.</p>
                   )}
                 </>
               );
