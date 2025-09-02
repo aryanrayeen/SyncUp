@@ -1,4 +1,5 @@
 import chatbotRoutes from "./routes/chatbot.route.js";
+import achievementRoutes from "../routes/achievement.route.js";
 import express from "express";
 import { connectDB } from "./config/db.js";
 import dotenv from "dotenv";
@@ -43,7 +44,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/user-info", userInfoRoutes);
 app.use("/api/chatbot", chatbotRoutes);
 app.use("/api/workouts", workoutRoutes);
+
 app.use("/api/day-tasks", dayTaskRoutes); // Register dayTask routes
+app.use("/api/achievements", achievementRoutes);
 
 // Meal Plan routes
 app.use("/api/meal-plans", mealPlanRoutes);
