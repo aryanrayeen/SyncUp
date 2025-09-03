@@ -1,6 +1,6 @@
 import chatbotRoutes from "./routes/chatbot.route.js";
 import publicRoutes from "./routes/public.route.js";
-import achievementRoutes from "../routes/achievement.route.js";
+import achievementRoutes from "./routes/achievement.route.js";
 import express from "express";
 import { connectDB } from "./config/db.js";
 import dotenv from "dotenv";
@@ -14,7 +14,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors"; // Import CORS
 
 import mealPlanRoutes from "./routes/mealPlan.route.js";
-import dayTaskRoutes from "../routes/dayTask.route.js"; // Import dayTask routes
+import dayTaskRoutes from "./routes/dayTask.route.js"; // Import dayTask routes
 
 import FoodItem from "./model/FoodItem.js";
 import path from "path";
@@ -24,12 +24,9 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables from backend root directory
-const envPath = path.join(__dirname, '..', '.env');
-console.log('Loading .env from:', envPath);
-dotenv.config({ path: envPath });
+// Load environment variables - Vercel handles this automatically
+dotenv.config();
 console.log('MONGO_URI loaded:', process.env.MONGO_URI ? 'Yes' : 'No');
-console.log('MONGO_URI value:', process.env.MONGO_URI);
 
 // Initialize app
 const app = express();
@@ -67,6 +64,39 @@ app.use(
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
+
+// Test endpoint for deployment verification
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'SyncUp Backend API is running!', 
+    status: 'success',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+app.get('/api', (req, res) => {
+  res.json({ 
+    message: 'SyncUp API v1.0', 
+    status: 'success',
+    endpoints: [
+      '/api/auth',
+      '/api/public',
+      '/api/fitness',
+      '/api/goals',
+      '/api/chatbot'
+    ]
+  });
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
 
 // More permissive CORS for public API endpoints
 app.use("/api/public", cors({
@@ -135,10 +165,26 @@ async function autoSeedFoodItems() {
 }
 
 // Connect to DB and start server
+async function startServer() {
+  try {
+    await connectDB();
+    await autoSeedFoodItems();
+    
+    // For Vercel, we export the app instead of listening
+    if (process.env.NODE_ENV === 'production') {
+      console.log('Server configured for production (Vercel)');
+    } else {
+      app.listen(PORT, () => {
+        console.log(`Server started on PORT: ${PORT}`);
+      });
+    }
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
 
-connectDB().then(async () => {
-  await autoSeedFoodItems();
-  app.listen(PORT, () => {
-    console.log(`Server started on PORT: ${PORT}`);
-  });
-});
+startServer();
+
+// Export the app for Vercel
+export default app;
