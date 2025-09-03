@@ -465,67 +465,63 @@ const WeeklySummary = () => {
                 </div>
                 {/* Dot Graph for daily tasks - fixed alignment and y-axis bar */}
                 <div className="mt-0 mb-0 flex justify-center">
-                  {/* Chart with interactive tooltips for each dot */}
-                  {(() => {
-                    const [hovered, setHovered] = useState(null);
-                    return (
-                      <div style={{ position: 'relative', width: 600, height: 200 }}>
-                        <svg width="600" height="200" viewBox="0 0 520 200">
-                          {/* Y axis bar */}
-                          <line x1="60" y1="30" x2="60" y2="170" stroke="#222" strokeWidth="2" />
-                          {/* X axis */}
-                          <line x1="60" y1="170" x2="500" y2="170" stroke="#222" />
-                          {/* Dots for each day - stacked from bottom, with tooltips */}
-                          {weekDates.map((date, i) => {
-                            const x = 100 + i * 60;
-                            const dayGoals = weeklyGoals.filter(goal => goal.date === date);
-                            const baseY = 170 - 18;
-                            return dayGoals.map((goal, j) => {
-                              const isCompleted = goal.completed;
-                              const color = isCompleted ? '#60a5fa' : '#bbb';
-                              const y = baseY - j * 30;
-                              return (
-                                <circle
-                                  key={`g-${i}-${j}`}
-                                  cx={x}
-                                  cy={y}
-                                  r="7"
-                                  fill={color}
-                                  style={{ cursor: 'pointer' }}
-                                  onMouseEnter={() => setHoveredDot({ x, y, title: goal.title, status: isCompleted ? 'Completed' : 'Pending' })}
-                                  onMouseLeave={() => setHoveredDot(null)}
-                                />
-                              );
-                            });
-                          })}
-                          {/* Day labels - spaced under dots */}
-                          {weekDays.map((d, i) => (
-                            <text key={d} x={100 + i * 60} y="190" textAnchor="middle" fontSize="16">{d}</text>
-                          ))}
-                        </svg>
-                        {hovered && (
-                          <div
-                            style={{
-                              position: 'absolute',
-                              left: hovered.x - 60,
-                              top: hovered.y - 40,
-                              background: '#fff',
-                              color: '#222',
-                              borderRadius: 8,
-                              padding: '6px 12px',
-                              fontSize: 13,
-                              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                              zIndex: 20,
-                              pointerEvents: 'none',
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {hovered.title} <span style={{ color: hovered.status === 'Completed' ? '#22c55e' : '#bbb', fontWeight: 600 }}>({hovered.status})</span>
-                          </div>
-                        )}
+                  <div style={{ position: 'relative', width: 600, height: 200 }}>
+                    <svg width="600" height="200" viewBox="0 0 520 200">
+                      {/* Y axis bar */}
+                      <line x1="60" y1="30" x2="60" y2="170" stroke="#222" strokeWidth="2" />
+                      {/* X axis */}
+                      <line x1="60" y1="170" x2="500" y2="170" stroke="#222" />
+                      {/* Dots for each day - stacked from bottom, with tooltips */}
+                      {weekDates.map((date, i) => {
+                        const x = 100 + i * 60;
+                        const dayGoals = weeklyGoals.filter(goal => goal.date === date);
+                        const baseY = 170 - 18;
+                        return dayGoals.map((goal, j) => {
+                          const isCompleted = goal.completed;
+                          const color = isCompleted ? '#60a5fa' : '#bbb';
+                          const y = baseY - j * 30;
+                          // Use goal.id if available, else fallback to title+index for key
+                          const key = goal.id ? `g-${date}-${goal.id}` : `g-${date}-${goal.title}-${j}`;
+                          return (
+                            <circle
+                              key={key}
+                              cx={x}
+                              cy={y}
+                              r="7"
+                              fill={color}
+                              style={{ cursor: 'pointer' }}
+                              onMouseEnter={() => setHoveredDot({ x, y, title: goal.title, status: isCompleted ? 'Completed' : 'Pending' })}
+                              onMouseLeave={() => setHoveredDot(null)}
+                            />
+                          );
+                        });
+                      })}
+                      {/* Day labels - spaced under dots */}
+                      {weekDays.map((d, i) => (
+                        <text key={d} x={100 + i * 60} y="190" textAnchor="middle" fontSize="16">{d}</text>
+                      ))}
+                    </svg>
+                    {hoveredDot && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: hoveredDot.x - 60,
+                          top: hoveredDot.y - 40,
+                          background: '#fff',
+                          color: '#222',
+                          borderRadius: 8,
+                          padding: '6px 12px',
+                          fontSize: 13,
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                          zIndex: 20,
+                          pointerEvents: 'none',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {hoveredDot.title} <span style={{ color: hoveredDot.status === 'Completed' ? '#22c55e' : '#bbb', fontWeight: 600 }}>({hoveredDot.status})</span>
                       </div>
-                    );
-                  })()}
+                    )}
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* On-going Tasks */}
