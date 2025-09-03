@@ -7,13 +7,14 @@ import { useAuthStore } from "../store/authStore";
 import { Link } from "react-router-dom";
 import useDayTasks, { formatDateUTC } from '../lib/useDayTasks';
 import { useGoalsStore } from '../store/goalsStore';
-import { Line } from 'react-chartjs-2';
+import { Line, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend,
@@ -24,6 +25,7 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend
@@ -120,7 +122,7 @@ const WeeklySummary = () => {
   const calY = dailyCalories.map(cal => -160 - Math.round(((cal - minCal) / calRange) * 60));
 
   // Prepare Chart.js data for calories chart (same style as Dashboard)
-  const weeklyCalorieChartData = {
+  const weeklyCalorieChartData = React.useMemo(() => ({
     labels: weekDays,
     datasets: [
       {
@@ -139,7 +141,21 @@ const WeeklySummary = () => {
         tension: 0.4,
       },
     ],
-  };
+  }), [weekDays, dailyCalories, userInfo?.caloriesIntake]);
+
+  // Prepare Chart.js data for workout completion bar chart
+  const weeklyWorkoutChartData = React.useMemo(() => ({
+    labels: weekDays,
+    datasets: [
+      {
+        label: 'Completed Tasks',
+        data: dailyTaskCounts,
+        backgroundColor: 'rgba(34, 197, 94, 0.8)',
+        borderColor: 'rgb(34, 197, 94)',
+        borderWidth: 1,
+      },
+    ],
+  }), [weekDays, dailyTaskCounts]);
 
   const chartOptions = {
     responsive: true,
@@ -163,6 +179,32 @@ const WeeklySummary = () => {
       },
     },
   };
+
+  const barChartOptions = React.useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+        },
+        ticks: {
+          stepSize: 1,
+        },
+      },
+      x: {
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+        },
+      },
+    },
+  }), []);
   
   // --- Goals Aggregation ---
   const weekDates = Array.from({ length: 7 }, (_, i) => {
@@ -207,76 +249,13 @@ const WeeklySummary = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* Days Worked Out (Bar Chart) */}
                   <div>
-                    <div className="font-semibold mb-2">Days Worked Out:</div>
-                    <div className="h-48 w-full flex justify-center items-end">
-                      {(() => {
-                        const [hoveredBar, setHoveredBar] = React.useState(null);
-                        // Helper to get completed items for a given day index
-                        const getCompletedForDay = (i) => {
-                          const d = new Date(weekStart);
-                          d.setUTCDate(weekStart.getUTCDate() + i);
-                          const dateStr = formatDateUTC(d);
-                          return (dayTasks[dateStr]?.completed || []);
-                        };
-                        return dailyTaskCounts.every(count => count === 0) ? (
-                          <div className="text-base-content/60 text-center mt-8">No completed fitness tasks this week.</div>
-                        ) : (
-                          <div style={{ marginTop: 4, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', height: 160, position: 'relative' }}>
-                            <svg width={340} height={130} viewBox="0 0 340 130">
-                              {/* Fixed Y axis lines and labels for 1–5 tasks */}
-                              {[1,2,3,4,5].map(label => {
-                                const yStart = 110;
-                                const yEnd = 20;
-                                const maxBarHeight = yStart - yEnd;
-                                // Position line for each label
-                                const y = yStart - ((label / 5) * maxBarHeight);
-                                return (
-                                  <g key={label}>
-                                    <line x1="45" y1={y} x2="285" y2={y} stroke="#ccc" />
-                                    <text x="18" y={y+5} fontSize="10" fontWeight="bold">{label}</text>
-                                  </g>
-                                );
-                              })}
-                              {/* Day labels */}
-                              <text x="67" y="125" textAnchor="middle" fontSize="13">S</text>
-                              <text x="99" y="125" textAnchor="middle" fontSize="13">M</text>
-                              <text x="131" y="125" textAnchor="middle" fontSize="13">T</text>
-                              <text x="163" y="125" textAnchor="middle" fontSize="13">W</text>
-                              <text x="195" y="125" textAnchor="middle" fontSize="13">T</text>
-                              <text x="227" y="125" textAnchor="middle" fontSize="13">F</text>
-                              <text x="259" y="125" textAnchor="middle" fontSize="13">S</text>
-                            </svg>
-                            {/* Tooltip for hovered bar */}
-                            {hoveredBar !== null && (
-                              <div style={{
-                                position: 'absolute',
-                                left: 58 + hoveredBar * 32 - 30,
-                                top: 10,
-                                background: 'rgba(30,41,59,0.97)',
-                                color: '#fff',
-                                borderRadius: 8,
-                                padding: '10px 14px',
-                                minWidth: 160,
-                                zIndex: 10,
-                                boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                              }}>
-                                <div style={{ fontWeight: 600, marginBottom: 4 }}>Completed ({weekDays[hoveredBar]})</div>
-                                {getCompletedForDay(hoveredBar).length === 0 ? (
-                                  <div style={{ color: '#cbd5e1' }}>No items</div>
-                                ) : (
-                                  <ul style={{ paddingLeft: 16, margin: 0 }}>
-                                    {getCompletedForDay(hoveredBar).map((item, idx) => (
-                                      <li key={item.id || idx} style={{ fontSize: 13 }}>
-                                        {item.name} <span style={{ color: '#38bdf8', fontSize: 11 }}>({item.type})</span>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })()}
+                    <div className="font-semibold mb-2">Total Completed Meals/Workouts:</div>
+                    <div className="h-48 w-full">
+                      {dailyTaskCounts.every(count => count === 0) ? (
+                        <div className="text-base-content/60 text-center mt-8">No completed fitness tasks this week.</div>
+                      ) : (
+                        <Bar data={weeklyWorkoutChartData} options={barChartOptions} />
+                      )}
                     </div>
                   </div>
                   {/* Calories (Chart.js Line Chart) - same style as Dashboard */}
@@ -514,7 +493,7 @@ const WeeklySummary = () => {
                       {/* X axis */}
                       <line x1="60" y1="170" x2="500" y2="170" stroke="#222" />
                       {/* Dots for each day - stacked from bottom, with tooltips */}
-                      {weekDates.map((date, i) => {
+                      {weekDates.flatMap((date, i) => {
                         const x = 100 + i * 60;
                         const dayGoals = weeklyGoals.filter(goal => goal.date === date);
                         const baseY = 170 - 18;
@@ -540,7 +519,7 @@ const WeeklySummary = () => {
                       })}
                       {/* Day labels - spaced under dots */}
                       {weekDays.map((d, i) => (
-                        <text key={d} x={100 + i * 60} y="190" textAnchor="middle" fontSize="16">{d}</text>
+                        <text key={`day-label-${i}`} x={100 + i * 60} y="190" textAnchor="middle" fontSize="16">{d}</text>
                       ))}
                     </svg>
                     {hoveredDot && (
