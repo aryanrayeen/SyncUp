@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useFitnessStore } from '../store/fitnessStore';
 
 const Wellness = () => {
   const [inhaleTime, setInhaleTime] = useState(4);
@@ -8,6 +9,14 @@ const Wellness = () => {
   const [timeLeft, setTimeLeft] = useState(inhaleTime);
   const [customInhale, setCustomInhale] = useState('');
   const [customExhale, setCustomExhale] = useState('');
+
+  const { userInfo, weightHistory } = useFitnessStore();
+
+  // Calculate current and previous weight
+  const currentWeight = userInfo?.weight || 0;
+  const lastWeight = weightHistory?.length > 1 ? weightHistory[weightHistory.length - 2]?.weight : currentWeight;
+  const weightChange = currentWeight - lastWeight;
+  const weightChangeColor = weightChange > 0 ? 'text-success' : weightChange < 0 ? 'text-error' : 'text-base-content';
 
   // Initialize timeLeft when inhaleTime changes
   useEffect(() => {
@@ -69,6 +78,15 @@ const Wellness = () => {
   return (
     <div className="p-3 sm:p-4 lg:p-6">
       <div className="w-full max-w-full lg:max-w-3xl mx-auto">
+        {/* Fitness Stats Section */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          <div className="bg-base-200 rounded-xl shadow-md p-4 flex flex-col justify-center items-start">
+            <div className="font-semibold text-base-content mb-1">Current Weight</div>
+            <div className="text-2xl font-bold mb-1">{currentWeight} kg</div>
+            <div className={`text-sm font-semibold ${weightChangeColor}`}>{weightChange > 0 ? '+' : ''}{weightChange} kg {weightChange > 0 ? 'gained' : weightChange < 0 ? 'lost' : ''}</div>
+          </div>
+          {/* ...existing boxes... */}
+        </div>
         <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary mb-4 sm:mb-6 lg:mb-8 text-center">ZEN SECTION</h2>
         {/* Breathwork Section */}
         <section className="bg-base-200 rounded-xl shadow-md p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 lg:mb-12">

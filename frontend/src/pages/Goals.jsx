@@ -151,11 +151,9 @@ const Goals = () => {
       <div className="mb-4 sm:mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-base-content">
-              <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold" style={{ color: 'black' }}>
                 Goals & Tasks
-              </span>
-            </h1>
+              </h1>
             <p className="text-sm sm:text-base text-base-content/70 mt-1 sm:mt-2">Track and manage your objectives</p>
           </div>
           <button

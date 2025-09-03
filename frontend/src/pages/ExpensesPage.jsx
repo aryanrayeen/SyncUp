@@ -397,7 +397,7 @@ const ExpensesPage = () => {
               });
               return (
                 <>
-                  <h4 className="mb-2 font-semibold">Transactions for {now.toLocaleString('en-US', { month: 'long', year: 'numeric' })}</h4>
+                  <h4 className="mb-2 font-semibold">Transactions for {new Date(filters.year, filters.month - 1).toLocaleString('en-US', { month: 'long', year: 'numeric' })}</h4>
                   {monthlyTxs.length ? (
                     <ul className="divide-y">
                       {monthlyTxs.map(tx => (

@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { User, Edit, Save, X, Camera, Mail, Phone, MapPin, Calendar } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useFitnessStore } from '../store/fitnessStore';
+import { useGoalsStore } from '../store/goalsStore';
 import { useAchievementsStore } from '../store/achievementsStore';
 
 const UserProfile = () => {
   const { achievements, fetchAchievements, isLoading: achievementsLoading } = useAchievementsStore();
   const { user, updateUserProfile, updateUser } = useAuthStore();
   const { userInfo, updateUserInfo, fetchUserInfo, isLoading } = useFitnessStore();
+  const { goals } = useGoalsStore();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -261,7 +263,7 @@ const UserProfile = () => {
                 </div>
                 <div className="stat p-3 sm:p-4">
                   <div className="stat-title text-xs sm:text-sm">Goals Completed</div>
-                  <div className="stat-value text-sm sm:text-lg">{userInfo?.goalsCompleted || 0}</div>
+                  <div className="stat-value text-sm sm:text-lg">{goals.filter(g => g.completed).length}</div>
                 </div>
               </div>
               {/* Earned Achievements Section */}

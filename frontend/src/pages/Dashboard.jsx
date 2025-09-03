@@ -353,20 +353,44 @@ const Dashboard = () => {
           <div className="stat-figure text-secondary flex-shrink-0">
             <Activity size={20} className="sm:w-6 sm:h-6" />
           </div>
-          <div className="stat-title text-xs sm:text-sm truncate">Exercise Goal</div>
-          <div className="stat-value text-secondary text-lg sm:text-2xl break-words">{userInfo.exerciseMinutes} min</div>
-          <div className="stat-desc text-xs sm:text-sm truncate">{todayExerciseProgress.toFixed(0)}% completed today</div>
+          <div className="stat-title text-xs sm:text-sm truncate">Workouts for Today</div>
+          <div className="stat-value text-secondary text-lg sm:text-2xl break-words">{
+            (() => {
+              // Get number of pending workouts for today from Fitness page's pending box
+              const today = new Date();
+              const todayDateStr = formatDateUTC(today);
+              const todayTasks = dayTasks[todayDateStr] || { pending: [], completed: [] };
+              const pendingWorkouts = todayTasks.pending.filter(task => task.type === 'workout');
+              return pendingWorkouts.length;
+            })()
+          }</div>
+          <div className="stat-desc text-xs sm:text-sm truncate">pending workouts</div>
         </div>
 
         <div className="stat bg-base-200 rounded-lg shadow p-4 min-h-0">
           <div className="stat-figure text-red-500 flex-shrink-0">
             <Heart size={20} className="sm:w-6 sm:h-6" />
           </div>
-          <div className="stat-title text-xs sm:text-sm truncate">Calorie Target</div>
-          <div className="stat-value text-green-600 text-lg sm:text-2xl break-words">{userInfo.caloriesIntake}</div>
-          <div className="stat-desc text-xs sm:text-sm truncate">
-            {todayCalories} cal consumed today
-          </div>
+            <div className="stat-title text-xs sm:text-sm truncate">Calories Consumed this week</div>
+            <div className="stat-value text-green-600 text-lg sm:text-2xl break-words">{
+              (() => {
+                // Calculate total calories for the current week from completed meal tasks
+                const today = new Date();
+                const utcDayOfWeek = today.getUTCDay(); // 0 (Sun) - 6 (Sat)
+                const weekStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - utcDayOfWeek));
+                let totalCalories = 0;
+                for (let i = 0; i < 7; i++) {
+                  const d = new Date(weekStart);
+                  d.setUTCDate(weekStart.getUTCDate() + i);
+                  const dateStr = formatDateUTC(d);
+                  const dayData = dayTasks[dateStr] || { pending: [], completed: [] };
+                  totalCalories += dayData.completed
+                    .filter(t => t.type === 'meal' && t.calories)
+                    .reduce((sum, t) => sum + t.calories, 0);
+                }
+                return totalCalories;
+              })()
+            } cal</div>
         </div>
 
         <div className="stat bg-base-200 rounded-lg shadow p-4 min-h-0">

@@ -3,12 +3,10 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { Plus } from 'lucide-react';
 import { useWorkoutStore } from '../store/workoutStore';
+import { useFitnessStore } from '../store/fitnessStore';
 
 import api from '../lib/axios';
 import useDayTasks, { formatDateUTC } from '../lib/useDayTasks';
-
-
-
 
 const Fitness = () => {
   // Use shared dayTasks state
@@ -22,6 +20,7 @@ const Fitness = () => {
 
   // Workout plans from store
   const { workoutPlans, fetchWorkoutPlans, isLoading: loadingWorkouts, error: errorWorkouts } = useWorkoutStore();
+  const { userInfo, weightHistory } = useFitnessStore();
 
   // Fetch meal plans on mount
   useEffect(() => {
@@ -40,6 +39,12 @@ const Fitness = () => {
     fetchMeals();
     fetchWorkoutPlans();
   }, [fetchWorkoutPlans]);
+
+  // Calculate current and previous weight
+  const currentWeight = userInfo?.weight || 0;
+  const lastWeight = weightHistory?.length > 1 ? weightHistory[weightHistory.length - 2]?.weight : currentWeight;
+  const weightChange = currentWeight - lastWeight;
+  const weightChangeColor = weightChange > 0 ? 'text-success' : weightChange < 0 ? 'text-error' : 'text-base-content';
 
   // All items available to add
   const savedItems = [
@@ -81,7 +86,14 @@ const Fitness = () => {
   return (
     <div className="p-3 sm:p-4 lg:p-6 max-w-full lg:max-w-7xl mx-auto">
       {/* ...existing dashboard content... */}
-      {/* Place your dashboard cards, stats, and chart here. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div className="card bg-base-200 shadow-lg p-4 flex flex-col justify-center items-start">
+          <div className="font-semibold text-base-content mb-1">Current Weight</div>
+          <div className="text-2xl font-bold mb-1">{currentWeight} kg</div>
+          <div className={`text-sm font-semibold ${weightChangeColor}`}>{weightChange > 0 ? '+' : ''}{weightChange} kg {weightChange > 0 ? 'gained' : weightChange < 0 ? 'lost' : ''}</div>
+        </div>
+        {/* ...other dashboard cards... */}
+      </div>
 
       {/* --- NEW: Pending/Completed/Calendar Section --- */}
       <div className="mt-8 sm:mt-12 lg:mt-16">
