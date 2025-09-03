@@ -113,53 +113,53 @@ function PendingCompletedSection() {
   const handleDelete = async (item) => { await remove(selectedDate, item); };
 
   return (
-    <div className="mt-10">
+    <div className="mt-6 sm:mt-8 lg:mt-10">
       {/* Pending/Completed Boxes for selected date */}
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-base-content">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-base-content">
           Fitness Tasks for {formatDateUTC(selectedDate)} (UTC)
         </h2>
         <button
-          className="btn btn-primary btn-circle"
+          className="btn btn-primary btn-circle btn-sm sm:btn-md"
           onClick={() => setShowPopup(true)}
         >
           <svg
-            width="24"
-            height="24"
+            width="20"
+            height="20"
+            className="sm:w-6 sm:h-6"
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="lucide lucide-plus"
           >
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
         </button>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <div className="card bg-base-200 shadow-lg">
-          <div className="card-body">
-            <h3 className="card-title text-warning">Pending</h3>
-            <div className="space-y-3 mt-4">
+          <div className="card-body p-4 sm:p-6">
+            <h3 className="card-title text-warning text-base sm:text-lg">Pending</h3>
+            <div className="space-y-2 sm:space-y-3 mt-3 sm:mt-4">
               {pending.length === 0 ? (
-                <div className="text-center py-8 text-base-content/50">
-                  No pending items for this day
+                <div className="text-center py-6 sm:py-8 text-base-content/50">
+                  <p className="text-sm sm:text-base">No pending items for this day</p>
                 </div>
               ) : (
                 pending.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between p-3 bg-base-100 rounded-lg border-l-4 border-primary"
+                    className="flex items-center justify-between p-2 sm:p-3 bg-base-100 rounded-lg border-l-4 border-primary"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                       <input
                         type="checkbox"
-                        className="checkbox checkbox-primary"
+                        className="checkbox checkbox-primary checkbox-sm sm:checkbox-md"
                         onChange={() => handleComplete(item)}
                       />
-                      <span>
+                      <span className="text-sm sm:text-base truncate">
                         {item.name}{' '}
                         <span className="text-xs text-base-content/40">
                           ({item.type})
@@ -167,7 +167,7 @@ function PendingCompletedSection() {
                       </span>
                     </div>
                     <button
-                      className="btn btn-xs btn-error"
+                      className="btn btn-xs btn-error flex-shrink-0 ml-2"
                       onClick={() => handleDelete(item)}
                     >
                       ✕
@@ -179,28 +179,28 @@ function PendingCompletedSection() {
           </div>
         </div>
         <div className="card bg-base-200 shadow-lg">
-          <div className="card-body">
-            <h3 className="card-title text-success">Completed</h3>
-            <div className="space-y-3 mt-4">
+          <div className="card-body p-4 sm:p-6">
+            <h3 className="card-title text-success text-base sm:text-lg">Completed</h3>
+            <div className="space-y-2 sm:space-y-3 mt-3 sm:mt-4">
               {completed.length === 0 ? (
-                <div className="text-center py-8 text-base-content/50">
-                  No completed items for this day
+                <div className="text-center py-6 sm:py-8 text-base-content/50">
+                  <p className="text-sm sm:text-base">No completed items for this day</p>
                 </div>
               ) : (
                 completed.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between p-3 bg-base-100 rounded-lg border-l-4 border-success"
+                    className="flex items-center justify-between p-2 sm:p-3 bg-base-100 rounded-lg border-l-4 border-success"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                       <input
                         type="checkbox"
-                        className="checkbox checkbox-success"
+                        className="checkbox checkbox-success checkbox-sm sm:checkbox-md"
                         checked
                         readOnly
                         onClick={() => handleUncomplete(item)}
                       />
-                      <span className="line-through text-success">
+                      <span className="line-through text-success text-sm sm:text-base truncate">
                         {item.name}{' '}
                         <span className="text-xs text-base-content/40">
                           ({item.type})
@@ -208,7 +208,7 @@ function PendingCompletedSection() {
                       </span>
                     </div>
                     <button
-                      className="btn btn-xs btn-error"
+                      className="btn btn-xs btn-error flex-shrink-0 ml-2"
                       onClick={() => handleDelete(item)}
                     >
                       ✕
@@ -222,9 +222,9 @@ function PendingCompletedSection() {
       </div>
 
       {/* Calendar with dots below boxes */}
-      <div className="flex flex-col items-center mb-8">
-        <h3 className="text-xl font-bold mb-2">Calendar</h3>
-        <div className="bg-base-200 p-4 rounded-lg shadow-md">
+      <div className="flex flex-col items-center mb-6 sm:mb-8">
+        <h3 className="text-lg sm:text-xl font-bold mb-2">Calendar</h3>
+        <div className="bg-base-200 p-3 sm:p-4 rounded-lg shadow-md w-full max-w-md">
             <Calendar
               value={selectedDate}
               onClickDay={(date) => {
@@ -233,6 +233,7 @@ function PendingCompletedSection() {
                 setSelectedDate(utcDate);
                 setShowPopup(true);
               }}
+              className="w-full"
               tileContent={({ date }) => {
                 // Always treat calendar date as UTC
                 const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -246,8 +247,8 @@ function PendingCompletedSection() {
                       key={`p${i}`}
                       style={{
                         display: 'inline-block',
-                        width: 7,
-                        height: 7,
+                        width: 6,
+                        height: 6,
                         borderRadius: '50%',
                         background: '#888',
                         margin: 1,
@@ -261,8 +262,8 @@ function PendingCompletedSection() {
                       key={`c${i}`}
                       style={{
                         display: 'inline-block',
-                        width: 7,
-                        height: 7,
+                        width: 6,
+                        height: 6,
                         borderRadius: '50%',
                         background: '#22c55e',
                         margin: 1,
@@ -279,27 +280,27 @@ function PendingCompletedSection() {
       {/* Popup for adding tasks to selected date */}
       {showPopup && (
         <div className="modal modal-open">
-          <div className="modal-box">
+          <div className="modal-box w-11/12 max-w-lg">
             <h3 className="font-bold text-lg mb-4">
               Tasks for {formatDateUTC(selectedDate)} (UTC)
             </h3>
             <div className="mb-4">
-              <div className="font-semibold mb-2">Pending:</div>
+              <div className="font-semibold mb-2 text-sm sm:text-base">Pending:</div>
               {pending.length === 0 ? (
-                <div className="text-base-content/60 mb-2">No pending tasks.</div>
+                <div className="text-base-content/60 mb-2 text-sm">No pending tasks.</div>
               ) : (
                 pending.map((item) => (
                   <div
                     key={item.id}
                     className="flex items-center justify-between p-2 rounded bg-base-100 border-l-4 border-base-300 mb-1"
                   >
-                    <span>
+                    <span className="text-sm truncate flex-1 mr-2">
                       {item.name}{' '}
                       <span className="text-xs text-base-content/40">
                         ({item.type})
                       </span>
                     </span>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1 sm:gap-2 flex-shrink-0">
                       <button
                         className="btn btn-xs btn-success"
                         onClick={() => handleComplete(item)}
@@ -316,22 +317,22 @@ function PendingCompletedSection() {
                   </div>
                 ))
               )}
-              <div className="font-semibold mt-4 mb-2">Completed:</div>
+              <div className="font-semibold mt-4 mb-2 text-sm sm:text-base">Completed:</div>
               {completed.length === 0 ? (
-                <div className="text-base-content/60 mb-2">No completed tasks.</div>
+                <div className="text-base-content/60 mb-2 text-sm">No completed tasks.</div>
               ) : (
                 completed.map((item) => (
                   <div
                     key={item.id}
                     className="flex items-center justify-between p-2 rounded bg-base-100 border-l-4 border-success mb-1"
                   >
-                    <span className="line-through text-success">
+                    <span className="line-through text-success text-sm truncate flex-1 mr-2">
                       {item.name}{' '}
                       <span className="text-xs text-base-content/40">
                         ({item.type})
                       </span>
                     </span>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1 sm:gap-2 flex-shrink-0">
                       <button
                         className="btn btn-xs btn-warning"
                         onClick={() => handleUncomplete(item)}
@@ -489,60 +490,60 @@ const Trends = () => {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-base-content">Fitness & Progress</h1>
-        <p className="text-base-content/70 mt-2">
+    <div className="p-3 sm:p-4 lg:p-6">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-base-content">Fitness & Progress</h1>
+        <p className="text-sm sm:text-base text-base-content/70 mt-1 sm:mt-2">
           Track your fitness journey and progress over time
         </p>
       </div>
 
       {/* Trends Grids */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 lg:mb-8">
         <Link
           to="/workouts"
           className="card bg-primary/10 shadow-lg cursor-pointer transition hover:scale-105"
         >
-          <div className="card-body flex items-center justify-center">
-            <span className="text-xl font-semibold text-primary">Workouts</span>
+          <div className="card-body p-4 sm:p-6 flex items-center justify-center">
+            <span className="text-base sm:text-lg lg:text-xl font-semibold text-primary">Workouts</span>
           </div>
         </Link>
         <Link
           to="/tutorials"
           className="card bg-secondary/10 shadow-lg cursor-pointer transition hover:scale-105"
         >
-          <div className="card-body flex items-center justify-center">
-            <span className="text-xl font-semibold text-secondary">Tutorials</span>
+          <div className="card-body p-4 sm:p-6 flex items-center justify-center">
+            <span className="text-base sm:text-lg lg:text-xl font-semibold text-secondary">Tutorials</span>
           </div>
         </Link>
         <Link
           to="/wellness"
           className="card bg-accent/10 shadow-lg cursor-pointer transition hover:scale-105"
         >
-          <div className="card-body flex items-center justify-center">
-            <span className="text-xl font-semibold text-accent">Wellness</span>
+          <div className="card-body p-4 sm:p-6 flex items-center justify-center">
+            <span className="text-base sm:text-lg lg:text-xl font-semibold text-accent">Wellness</span>
           </div>
         </Link>
         {/* Meal Plan Button */}
         <Link
           to="/meal-plan"
-          className="card bg-info/10 shadow-lg cursor-pointer transition hover:scale-105 md:col-span-3"
+          className="card bg-info/10 shadow-lg cursor-pointer transition hover:scale-105 sm:col-span-2 lg:col-span-3"
         >
-          <div className="card-body flex items-center justify-center">
-            <span className="text-xl font-semibold text-info">Generate Meal Plan</span>
+          <div className="card-body p-4 sm:p-6 flex items-center justify-center">
+            <span className="text-base sm:text-lg lg:text-xl font-semibold text-info">Generate Meal Plan</span>
           </div>
         </Link>
       </div>
 
       {/* Fitness Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 lg:mb-8">
         <div className="card bg-base-200 shadow-lg">
-          <div className="card-body">
+          <div className="card-body p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm opacity-70">Weight Progress</p>
+                <p className="text-xs sm:text-sm opacity-70">Weight Progress</p>
                 <p
-                  className={`text-2xl font-bold ${
+                  className={`text-lg sm:text-xl lg:text-2xl font-bold ${
                     metrics.weightProgress.includes('-')
                       ? 'text-success'
                       : 'text-warning'
@@ -552,32 +553,32 @@ const Trends = () => {
                 </p>
               </div>
               {metrics.weightProgress.includes('-') ? (
-                <TrendingDown className="w-8 h-8 text-success" />
+                <TrendingDown className="w-6 h-6 sm:w-8 sm:h-8 text-success" />
               ) : (
-                <TrendingUp className="w-8 h-8 text-warning" />
+                <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-warning" />
               )}
             </div>
           </div>
         </div>
 
         <div className="card bg-base-200 shadow-lg">
-          <div className="card-body">
+          <div className="card-body p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm opacity-70">Daily Calories Target</p>
-                <p className="text-2xl font-bold">{metrics.avgCalories}</p>
+                <p className="text-xs sm:text-sm opacity-70">Daily Calories Target</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold">{metrics.avgCalories}</p>
               </div>
-              <Activity className="w-8 h-8 text-primary" />
+              <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
             </div>
           </div>
         </div>
 
         <div className="card bg-base-200 shadow-lg">
-          <div className="card-body">
+          <div className="card-body p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm opacity-70">Est. Active Days/Month</p>
-                <p className="text-2xl font-bold text-info">{metrics.activeDays}</p>
+                <p className="text-xs sm:text-sm opacity-70">Est. Active Days/Month</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-info">{metrics.activeDays}</p>
               </div>
               {/* Removed extra calendar icon */}
             </div>
@@ -589,23 +590,23 @@ const Trends = () => {
       <PendingCompletedSection />
 
       {/* Weight Progress Chart */}
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-full lg:max-w-4xl mx-auto">
         <div className="card bg-base-200 shadow-lg">
-          <div className="card-body">
-            <h2 className="card-title">Weight Progress Over Time</h2>
-            <p className="text-sm opacity-70 mb-4">
+          <div className="card-body p-4 sm:p-6">
+            <h2 className="card-title text-base sm:text-lg lg:text-xl">Weight Progress Over Time</h2>
+            <p className="text-xs sm:text-sm opacity-70 mb-3 sm:mb-4">
               {userInfo
                 ? `Current: ${userInfo.weight}kg | BMI: ${userInfo.bmi?.toFixed(1) || (
                     userInfo.weight / Math.pow(userInfo.height / 100, 2)
                   ).toFixed(1)}`
                 : 'Loading...'}
             </p>
-            <div className="h-64">
+            <div className="h-48 sm:h-56 lg:h-64">
               <Line data={weightTrendData} options={chartOptions} />
             </div>
             {!userInfo && (
-              <div className="text-center py-8">
-                <p className="text-base-content/50">
+              <div className="text-center py-6 sm:py-8">
+                <p className="text-sm sm:text-base text-base-content/50">
                   Complete your profile to see personalized weight trends
                 </p>
               </div>

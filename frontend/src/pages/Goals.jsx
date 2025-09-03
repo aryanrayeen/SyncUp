@@ -146,21 +146,21 @@ const Goals = () => {
   }, {});
 
   return (
-    <div className="p-6">
+    <div className="p-3 sm:p-4 lg:p-6">
       {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
+      <div className="mb-4 sm:mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-base-content">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-base-content">
               <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 Goals & Tasks
               </span>
             </h1>
-            <p className="text-base-content/70 mt-2">Track and manage your objectives</p>
+            <p className="text-sm sm:text-base text-base-content/70 mt-1 sm:mt-2">Track and manage your objectives</p>
           </div>
           <button
             onClick={() => setShowAddForm(true)}
-            className="btn btn-primary"
+            className="btn btn-primary btn-sm sm:btn-md"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Goal
@@ -170,7 +170,7 @@ const Goals = () => {
 
       {/* Error Alert */}
       {error && (
-        <div className="alert alert-error mb-6">
+        <div className="alert alert-error mb-4 sm:mb-6 text-sm">
           <span>{error}</span>
         </div>
       )}

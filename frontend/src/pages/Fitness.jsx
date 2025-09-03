@@ -79,36 +79,38 @@ const Fitness = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-3 sm:p-4 lg:p-6 max-w-full lg:max-w-7xl mx-auto">
       {/* ...existing dashboard content... */}
       {/* Place your dashboard cards, stats, and chart here. */}
 
       {/* --- NEW: Pending/Completed/Calendar Section --- */}
-      <div className="mt-16">
+      <div className="mt-8 sm:mt-12 lg:mt-16">
         {/* Debug warning if dateStr not in dayItems */}
         {dayTasks && Object.keys(dayTasks).length > 0 && !dayTasks[dateStr] && (
           <div style={{color:'red',fontWeight:'bold',marginBottom:8}}>
             Warning: No data for selected date ({dateStr}). Existing keys: {Object.keys(dayTasks).join(', ')}
           </div>
         )}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-base-content">Today's Fitness Tasks</h2>
-          <button className="btn btn-primary btn-circle" onClick={() => setShowPopup(true)}>
-            <Plus className="w-6 h-6" />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-base-content">Today's Fitness Tasks</h2>
+          <button className="btn btn-primary btn-circle btn-sm sm:btn-md" onClick={() => setShowPopup(true)}>
+            <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {/* Pending */}
           <div className="card bg-base-200 shadow-lg">
-            <div className="card-body">
-              <h3 className="card-title text-warning">Pending</h3>
-              <div className="space-y-3 mt-4">
+            <div className="card-body p-4 sm:p-6">
+              <h3 className="card-title text-warning text-base sm:text-lg">Pending</h3>
+              <div className="space-y-2 sm:space-y-3 mt-3 sm:mt-4">
                 {pending.length === 0 ? (
-                  <div className="text-center py-8 text-base-content/50">No pending items for this day</div>
+                  <div className="text-center py-6 sm:py-8 text-base-content/50">
+                    <p className="text-sm sm:text-base">No pending items for this day</p>
+                  </div>
                 ) : (
                   pending.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between p-3 bg-base-100 rounded-lg border-l-4 border-primary">
-                      <div className="flex items-center gap-3">
+                    <div key={item.id} className="flex items-center justify-between p-2 sm:p-3 bg-base-100 rounded-lg border-l-4 border-primary">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                         <input type="checkbox" className="checkbox checkbox-primary" onChange={() => handleComplete(item)} />
                         <span>{item.name} <span className="text-xs text-base-content/40">({item.type})</span></span>
                       </div>

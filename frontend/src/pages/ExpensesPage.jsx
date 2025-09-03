@@ -248,17 +248,17 @@ const ExpensesPage = () => {
   const budgetUsage = monthlyBudget > 0 ? (currentMonthExpenses / monthlyBudget) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-base-100 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-base-100 p-3 sm:p-4 lg:p-6">
+      <div className="max-w-full lg:max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-base-content">Expense Management</h1>
-          <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6 lg:mb-8">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-base-content">Expense Management</h1>
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
             <button
               onClick={() => setShowBudgetModal(true)}
-              className="btn btn-outline btn-primary"
+              className="btn btn-outline btn-primary btn-sm sm:btn-md"
             >
-              <DollarSign className="w-5 h-5" />
+              <DollarSign className="w-4 h-4 sm:w-5 sm:h-5" />
               Set Budget
             </button>
             <button
@@ -266,18 +266,18 @@ const ExpensesPage = () => {
                 resetTransactionForm();
                 setShowTransactionModal(true);
               }}
-              className="btn btn-primary"
+              className="btn btn-primary btn-sm sm:btn-md"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
               Add Transaction
             </button>
           </div>
         </div>
 
         {/* Financial Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 lg:mb-8">
           <div className="card bg-base-200 shadow-md">
-            <div className="card-body">
+            <div className="card-body p-4 sm:p-6">
               <h3 className="card-title text-sm text-base-content/70">Monthly Budget</h3>
               <p className="text-2xl font-bold text-primary">{formatCurrency(monthlyBudget)}</p>
             </div>

@@ -214,56 +214,58 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-base-content">
+    <div className="p-3 sm:p-4 lg:p-6">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-base-content">
           Welcome back, {user?.name}! 👋
         </h1>
-        <p className="text-base-content/70 mt-2">Here's your fitness and wellness overview</p>
+        <p className="text-sm sm:text-base text-base-content/70 mt-1 sm:mt-2">Here's your fitness and wellness overview</p>
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="stat bg-base-200 rounded-lg shadow">
-          <div className="stat-figure text-primary">
-            <Scale size={24} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+        <div className="stat bg-base-200 rounded-lg shadow p-4 min-h-0">
+          <div className="stat-figure text-primary flex-shrink-0">
+            <Scale size={20} className="sm:w-6 sm:h-6" />
           </div>
-          <div className="stat-title">Current Weight</div>
-          <div className="stat-value text-primary">{userInfo.weight} kg</div>
+          <div className="stat-title text-xs sm:text-sm truncate">Current Weight</div>
+          <div className="stat-value text-primary text-lg sm:text-2xl break-words">{userInfo.weight} kg</div>
           {userInfo.bmi && (
-            <div className={`stat-desc ${bmiInfo?.color}`}>
+            <div className={`stat-desc text-xs sm:text-sm ${bmiInfo?.color} truncate`}>
               BMI: {userInfo.bmi.toFixed(1)} ({bmiInfo?.category})
             </div>
           )}
         </div>
 
-        <div className="stat bg-base-200 rounded-lg shadow">
-          <div className="stat-figure text-secondary">
-            <Activity size={24} />
+        <div className="stat bg-base-200 rounded-lg shadow p-4 min-h-0">
+          <div className="stat-figure text-secondary flex-shrink-0">
+            <Activity size={20} className="sm:w-6 sm:h-6" />
           </div>
-          <div className="stat-title">Exercise Goal</div>
-          <div className="stat-value text-secondary">{userInfo.exerciseMinutes} min</div>
-          <div className="stat-desc">{dailyProgress.exercise.toFixed(0)}% completed today</div>
+          <div className="stat-title text-xs sm:text-sm truncate">Exercise Goal</div>
+          <div className="stat-value text-secondary text-lg sm:text-2xl break-words">{userInfo.exerciseMinutes} min</div>
+          <div className="stat-desc text-xs sm:text-sm truncate">{dailyProgress.exercise.toFixed(0)}% completed today</div>
         </div>
 
-        <div className="stat bg-base-200 rounded-lg shadow">
-          <div className="stat-figure text-accent">
-            <Heart size={24} />
+        <div className="stat bg-base-200 rounded-lg shadow p-4 min-h-0">
+          <div className="stat-figure text-accent flex-shrink-0">
+            <Heart size={20} className="sm:w-6 sm:h-6" />
           </div>
-          <div className="stat-title">Calorie Target</div>
-          <div className="stat-value text-accent">{userInfo.caloriesIntake}</div>
-          <div className="stat-desc">
+          <div className="stat-title text-xs sm:text-sm truncate">Calorie Target</div>
+          <div className="stat-value text-accent text-lg sm:text-2xl break-words">{userInfo.caloriesIntake}</div>
+          <div className="stat-desc text-xs sm:text-sm truncate">
             {calorieBalance > 0 ? `+${calorieBalance}` : calorieBalance} cal balance
           </div>
         </div>
 
-        <div className="stat bg-base-200 rounded-lg shadow">
-          <div className="stat-figure text-warning">
-            <DollarSign size={24} />
+        <div className="stat bg-base-200 rounded-lg shadow p-4 min-h-0">
+          <div className="stat-figure text-warning flex-shrink-0">
+            <DollarSign size={20} className="sm:w-6 sm:h-6" />
           </div>
-          <div className="stat-title">Monthly Budget</div>
-          <div className="stat-value text-warning">{formatCurrency(monthlyBudget || 0)}</div>
-          <div className={`stat-desc ${remainingBudget >= 0 ? 'text-success' : 'text-error'}`}>
+          <div className="stat-title text-xs sm:text-sm truncate">Monthly Budget</div>
+          <div className="stat-value text-warning text-lg sm:text-2xl break-words overflow-hidden">
+            <span className="block truncate">{formatCurrency(monthlyBudget || 0)}</span>
+          </div>
+          <div className={`stat-desc text-xs sm:text-sm truncate ${remainingBudget >= 0 ? 'text-success' : 'text-error'}`}>
             {formatCurrency(remainingBudget)} remaining
           </div>
         </div>
