@@ -28,7 +28,18 @@ const PORT = process.env.PORT || 3004;
 // CORS Middleware (must be before routes)
 app.use(
   cors({
-    origin: "http://localhost:5173", // your frontend's dev URL
+    origin: function (origin, callback) {
+      // Allow requests with no origin (mobile apps, curl, etc.)
+      if (!origin) return callback(null, true);
+      
+      // Allow all localhost and 127.0.0.1 origins for development
+      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        return callback(null, true);
+      }
+      
+      // For production, you can add specific origins here
+      callback(null, true); // Allow all for now
+    },
     credentials: true, // allow sending cookies
   })
 );
@@ -39,9 +50,10 @@ app.use(cookieParser());
 
 // More permissive CORS for public API endpoints
 app.use("/api/public", cors({
-  origin: "*", // Allow all origins for public API
-  methods: ["GET", "POST"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  origin: true, // Allow all origins for public API
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: false // Public API doesn't need credentials
 }));
 
 // Routes
