@@ -1,6 +1,17 @@
 {
+  "name": "syncup",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "npm install && cd frontend && npm install && npm run build",
+    "start": "cd backend && npm install && node src/server.js",
+    "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\""
+  },
   "dependencies": {
     "@google/genai": "^1.16.0",
     "@google/generative-ai": "^0.24.1"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }
