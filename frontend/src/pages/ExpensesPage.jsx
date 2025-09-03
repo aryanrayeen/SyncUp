@@ -93,7 +93,6 @@ const ExpensesPage = () => {
 
   // Filtered transactions for display in table
   const [filteredTransactions, setFilteredTransactions] = useState([]);
-  const [allTransactions, setAllTransactions] = useState([]); // For top cards
 
   useEffect(() => {
     if (user?.monthlyBudget) {
@@ -101,10 +100,7 @@ const ExpensesPage = () => {
       setBudgetForm({ monthlyBudget: user.monthlyBudget });
     }
     // Fetch all transactions for overview cards calculation
-    (async () => {
-      const all = await fetchTransactions({});
-      setAllTransactions(all || []);
-    })();
+    fetchTransactions({});
   }, [user]);
 
   // Separate effect for filter changes - only affects the filtered view
@@ -226,26 +222,11 @@ const ExpensesPage = () => {
 
   const currentCategories = formData.type === 'expense' ? expenseCategories : incomeCategories;
   
-  // Current month data (always current month, not affected by filters)
-  const getCurrentMonthData = () => {
-    const currentMonth = new Date().getMonth() + 1;
-    const currentYear = new Date().getFullYear();
-    const currentMonthTransactions = allTransactions.filter(transaction => {
-      const transactionDate = new Date(transaction.date);
-      return transactionDate.getMonth() + 1 === currentMonth &&
-             transactionDate.getFullYear() === currentYear;
-    });
-    const expenses = currentMonthTransactions
-      .filter(t => t.type === 'expense')
-      .reduce((total, t) => total + t.amount, 0);
-    const income = currentMonthTransactions
-      .filter(t => t.type === 'income')
-      .reduce((total, t) => total + t.amount, 0);
-    return { expenses, income };
-  };
-  const { expenses: currentMonthExpenses, income: currentMonthIncome } = getCurrentMonthData();
-  const remainingBudget = monthlyBudget - currentMonthExpenses;
-  const budgetUsage = monthlyBudget > 0 ? (currentMonthExpenses / monthlyBudget) * 100 : 0;
+  // Current month data (always current month, not affected by filters) - use store methods
+  const currentMonthExpenses = getCurrentMonthExpenses();
+  const currentMonthIncome = getCurrentMonthIncome();
+  const remainingBudget = getRemainingBudget();
+  const budgetUsage = getBudgetUsagePercentage();
 
   return (
     <div className="min-h-screen bg-base-100 p-3 sm:p-4 lg:p-6">
@@ -410,7 +391,7 @@ const ExpensesPage = () => {
               const now = new Date();
               const currentMonth = now.getMonth();
               const currentYear = now.getFullYear();
-              const monthlyTxs = allTransactions.filter(tx => {
+              const monthlyTxs = transactions.filter(tx => {
                 const txDate = new Date(tx.date);
                 return txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear;
               });
