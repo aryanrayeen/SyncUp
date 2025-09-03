@@ -144,46 +144,53 @@ const Fitness = () => {
           </div>
         </div>
         {/* Calendar */}
-        <div className="mt-10 flex flex-col items-center">
-          <h3 className="text-xl font-semibold mb-4 text-base-content">Calendar</h3>
-          <Calendar
-            onChange={handleDateChange}
-            value={new Date(selectedDate)}
-            className="rounded-lg shadow-lg bg-base-200 p-4"
-            tileClassName={() => 'text-base'}
-            style={{ width: '700px', fontSize: '1.15rem' }}
-            tileContent={({ date }) => {
-              const dateStr = formatDateUTC(date);
-              const tasks = dayTasks[dateStr] || { pending: [], completed: [] };
-              const dots = [];
-              for (let i = 0; i < tasks.pending.length; i++) {
-                dots.push(<span key={`p${i}`} style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#888', margin: 1 }}></span>);
-              }
-              for (let i = 0; i < tasks.completed.length; i++) {
-                dots.push(<span key={`c${i}`} style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#22c55e', margin: 1 }}></span>);
-              }
-              return <div style={{ marginTop: 2, textAlign: 'center' }}>{dots}</div>;
-            }}
-          />
+        <div className="mt-6 sm:mt-8 lg:mt-10 flex flex-col items-center">
+          <h3 className="text-lg sm:text-xl font-semibold mb-4 text-base-content">Calendar</h3>
+          <div className="w-full max-w-full overflow-x-auto">
+            <Calendar
+              onChange={handleDateChange}
+              value={new Date(selectedDate)}
+              className="rounded-lg shadow-lg bg-base-200 p-2 sm:p-4 mx-auto"
+              tileClassName={() => 'text-xs sm:text-base'}
+              style={{ 
+                width: '100%', 
+                maxWidth: '700px', 
+                fontSize: window.innerWidth < 640 ? '0.875rem' : '1.15rem',
+                minWidth: '280px'
+              }}
+              tileContent={({ date }) => {
+                const dateStr = formatDateUTC(date);
+                const tasks = dayTasks[dateStr] || { pending: [], completed: [] };
+                const dots = [];
+                for (let i = 0; i < tasks.pending.length; i++) {
+                  dots.push(<span key={`p${i}`} style={{ display: 'inline-block', width: window.innerWidth < 640 ? 5 : 7, height: window.innerWidth < 640 ? 5 : 7, borderRadius: '50%', background: '#888', margin: 1 }}></span>);
+                }
+                for (let i = 0; i < tasks.completed.length; i++) {
+                  dots.push(<span key={`c${i}`} style={{ display: 'inline-block', width: window.innerWidth < 640 ? 5 : 7, height: window.innerWidth < 640 ? 5 : 7, borderRadius: '50%', background: '#22c55e', margin: 1 }}></span>);
+                }
+                return <div style={{ marginTop: 2, textAlign: 'center' }}>{dots}</div>;
+              }}
+            />
+          </div>
         </div>
       </div>
 
       {/* Popup for adding items */}
       {showPopup && (
         <div className="modal modal-open">
-          <div className="modal-box">
-            <h3 className="font-bold text-lg mb-4">Add to {selectedDate.toLocaleDateString()}</h3>
+          <div className="modal-box max-w-sm sm:max-w-md lg:max-w-lg">
+            <h3 className="font-bold text-lg mb-4">Add to {new Date(selectedDate).toLocaleDateString()}</h3>
             <div className="space-y-2">
               {(loadingMeals || loadingWorkouts) && <div>Loading...</div>}
-              {errorMeals && <div className="text-error">{errorMeals}</div>}
-              {errorWorkouts && <div className="text-error">{errorWorkouts}</div>}
+              {errorMeals && <div className="text-error text-sm">{errorMeals}</div>}
+              {errorWorkouts && <div className="text-error text-sm">{errorWorkouts}</div>}
               {savedItems.length === 0 && !(loadingMeals || loadingWorkouts) && (
-                <div className="text-base-content/50">No saved meal plans or workout plans found.</div>
+                <div className="text-base-content/50 text-sm">No saved meal plans or workout plans found.</div>
               )}
               {savedItems.map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-2 rounded bg-base-100 border-l-4 border-base-300">
-                  <span>{item.name} <span className="text-xs text-base-content/40">({item.type})</span></span>
-                  <button className="btn btn-sm btn-primary btn-circle" onClick={() => handleAddToPending(item)}>
+                <div key={item.id} className="flex items-center justify-between p-2 sm:p-3 rounded bg-base-100 border-l-4 border-base-300 gap-2">
+                  <span className="flex-1 text-sm break-words">{item.name} <span className="text-xs text-base-content/40">({item.type})</span></span>
+                  <button className="btn btn-sm btn-primary btn-circle flex-shrink-0" onClick={() => handleAddToPending(item)}>
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>

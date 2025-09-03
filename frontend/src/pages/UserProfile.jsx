@@ -204,20 +204,20 @@ const UserProfile = () => {
 
   return (
 
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-base-content">Profile</h1>
-        <p className="text-base-content/70 mt-2">Manage your personal information</p>
+    <div className="p-3 sm:p-4 lg:p-6 max-w-full overflow-x-hidden">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-base-content">Profile</h1>
+        <p className="text-sm sm:text-base text-base-content/70 mt-2">Manage your personal information</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 w-full">
         {/* Profile Card + Earned Achievements */}
-        <div className="lg:col-span-1">
-          <div className="card bg-base-200 shadow-lg">
-            <div className="card-body text-center">
+        <div className="lg:col-span-1 order-1 lg:order-1 w-full">
+          <div className="card bg-base-200 shadow-lg w-full">
+            <div className="card-body text-center p-4 sm:p-6">
               <div className="relative inline-block">
                 {formData.profilePicture ? (
-                  <div className="w-32 h-32 rounded-full overflow-hidden mx-auto mb-4 border-4 border-primary">
+                  <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden mx-auto mb-4 border-4 border-primary">
                     <img 
                       src={formData.profilePicture} 
                       alt="Profile" 
@@ -225,8 +225,8 @@ const UserProfile = () => {
                     />
                   </div>
                 ) : (
-                  <div className="w-32 h-32 rounded-full bg-primary flex items-center justify-center mx-auto mb-4">
-                    <User className="w-16 h-16 text-primary-content" />
+                  <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-primary flex items-center justify-center mx-auto mb-4">
+                    <User className="w-12 h-12 sm:w-16 sm:h-16 text-primary-content" />
                   </div>
                 )}
                 {isEditing ? (
@@ -240,33 +240,33 @@ const UserProfile = () => {
                     />
                     <label
                       htmlFor="profile-picture-upload"
-                      className="absolute bottom-2 right-2 btn btn-circle btn-sm btn-primary cursor-pointer"
+                      className="absolute bottom-2 right-2 btn btn-circle btn-xs sm:btn-sm btn-primary cursor-pointer"
                     >
-                      <Camera className="w-4 h-4" />
+                      <Camera className="w-3 h-3 sm:w-4 sm:h-4" />
                     </label>
                   </div>
                 ) : (
-                  <button className="absolute bottom-2 right-2 btn btn-circle btn-sm btn-primary opacity-50 cursor-not-allowed">
-                    <Camera className="w-4 h-4" />
+                  <button className="absolute bottom-2 right-2 btn btn-circle btn-xs sm:btn-sm btn-primary opacity-50 cursor-not-allowed">
+                    <Camera className="w-3 h-3 sm:w-4 sm:h-4" />
                   </button>
                 )}
               </div>
-              <h2 className="text-2xl font-bold">{formData.name}</h2>
+              <h2 className="text-lg sm:text-2xl font-bold break-words">{formData.name}</h2>
               {/* <p className="text-base-content/70">{formData.bio}</p> */}
               <div className="divider"></div>
               <div className="stats stats-vertical shadow">
-                <div className="stat">
-                  <div className="stat-title">Member Since</div>
-                  <div className="stat-value text-lg">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A'}</div>
+                <div className="stat p-3 sm:p-4">
+                  <div className="stat-title text-xs sm:text-sm">Member Since</div>
+                  <div className="stat-value text-sm sm:text-lg">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A'}</div>
                 </div>
-                <div className="stat">
-                  <div className="stat-title">Goals Completed</div>
-                  <div className="stat-value text-lg">{userInfo?.goalsCompleted || 0}</div>
+                <div className="stat p-3 sm:p-4">
+                  <div className="stat-title text-xs sm:text-sm">Goals Completed</div>
+                  <div className="stat-value text-sm sm:text-lg">{userInfo?.goalsCompleted || 0}</div>
                 </div>
               </div>
               {/* Earned Achievements Section */}
               <div className="mt-6 text-left">
-                <h3 className="text-lg font-bold mb-2 text-success">
+                <h3 className="text-base sm:text-lg font-bold mb-2 text-success">
                   Earned Achievements ({achievements.filter(a => a.earned).length}/{achievements.length})
                 </h3>
                 {achievementsLoading ? (
@@ -274,13 +274,13 @@ const UserProfile = () => {
                 ) : (
                   <ul className="space-y-2">
                     {achievements.filter(a => a.earned).length === 0 ? (
-                      <li className="text-base-content/60">No achievements earned yet.</li>
+                      <li className="text-base-content/60 text-sm">No achievements earned yet.</li>
                     ) : (
                       achievements.filter(a => a.earned).map(a => (
-                        <li key={a._id} className="flex items-center gap-3 p-2 bg-success/10 rounded-lg border-l-4 border-success">
-                          <span className="text-2xl">{a.icon}</span>
-                          <div>
-                            <div className="font-bold text-success">{a.name}</div>
+                        <li key={a._id} className="flex items-center gap-2 sm:gap-3 p-2 bg-success/10 rounded-lg border-l-4 border-success">
+                          <span className="text-lg sm:text-2xl">{a.icon}</span>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-bold text-success text-xs sm:text-sm break-words">{a.name}</div>
                             <div className="text-xs text-base-content/50">Earned: {a.earnedAt ? new Date(a.earnedAt).toLocaleDateString() : '—'}</div>
                           </div>
                         </li>
@@ -294,32 +294,32 @@ const UserProfile = () => {
         </div>
 
         {/* Information Cards */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6 order-2 lg:order-2 w-full">
           {/* Personal Information */}
-          <div className="card bg-base-200 shadow-lg">
-            <div className="card-body">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold">Personal Information</h3>
+          <div className="card bg-base-200 shadow-lg w-full">
+            <div className="card-body p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
+                <h3 className="text-lg sm:text-xl font-bold">Personal Information</h3>
                 {!isEditing ? (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="btn btn-primary btn-sm"
+                    className="btn btn-primary btn-sm w-full sm:w-auto"
                   >
                     <Edit className="w-4 h-4 mr-2" />
                     Edit
                   </button>
                 ) : (
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                     <button
                       onClick={handleSave}
-                      className="btn btn-success btn-sm"
+                      className="btn btn-success btn-sm order-1"
                     >
                       <Save className="w-4 h-4 mr-2" />
                       Save
                     </button>
                     <button
                       onClick={handleCancel}
-                      className="btn btn-error btn-sm"
+                      className="btn btn-error btn-sm order-2"
                     >
                       <X className="w-4 h-4 mr-2" />
                       Cancel
@@ -328,81 +328,81 @@ const UserProfile = () => {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="form-control">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                <div className="form-control w-full">
                   <label className="label">
-                    <span className="label-text">Full Name</span>
+                    <span className="label-text text-sm sm:text-base">Full Name</span>
                   </label>
                   {isEditing ? (
                     <input
                       type="text"
-                      className="input input-bordered"
+                      className="input input-bordered w-full"
                       value={formData.name}
                       onChange={(e) => setFormData({...formData, name: e.target.value})}
                     />
                   ) : (
-                    <div className="flex items-center gap-2 p-3 bg-base-100 rounded-lg">
-                      <User className="w-4 h-4" />
-                      <span>{formData.name}</span>
+                    <div className="flex items-center gap-2 p-3 bg-base-100 rounded-lg w-full">
+                      <User className="w-4 h-4 flex-shrink-0" />
+                      <span className="break-words min-w-0 flex-1">{formData.name}</span>
                     </div>
                   )}
                 </div>
 
-                <div className="form-control">
+                <div className="form-control w-full">
                   <label className="label">
-                    <span className="label-text">Email</span>
+                    <span className="label-text text-sm sm:text-base">Email</span>
                   </label>
                   {isEditing ? (
                     <input
                       type="email"
-                      className="input input-bordered"
+                      className="input input-bordered w-full"
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
                     />
                   ) : (
-                    <div className="flex items-center gap-2 p-3 bg-base-100 rounded-lg">
-                      <Mail className="w-4 h-4" />
-                      <span>{formData.email}</span>
+                    <div className="flex items-center gap-2 p-3 bg-base-100 rounded-lg w-full">
+                      <Mail className="w-4 h-4 flex-shrink-0" />
+                      <span className="break-words min-w-0 flex-1">{formData.email}</span>
                     </div>
                   )}
                 </div>
 
-                <div className="form-control">
+                <div className="form-control w-full">
                   <label className="label">
-                    <span className="label-text">Phone</span>
+                    <span className="label-text text-sm sm:text-base">Phone</span>
                   </label>
                   {isEditing ? (
                     <input
                       type="text"
-                      className="input input-bordered"
+                      className="input input-bordered w-full"
                       placeholder="Enter phone number"
                       value={formData.phone}
                       onChange={(e) => setFormData({...formData, phone: e.target.value})}
                     />
                   ) : (
-                    <div className="flex items-center gap-2 p-3 bg-base-100 rounded-lg">
-                      <Phone className="w-4 h-4" />
-                      <span>{formData.phone || 'Not provided'}</span>
+                    <div className="flex items-center gap-2 p-3 bg-base-100 rounded-lg w-full">
+                      <Phone className="w-4 h-4 flex-shrink-0" />
+                      <span className="break-words min-w-0 flex-1">{formData.phone || 'Not provided'}</span>
                     </div>
                   )}
                 </div>
 
-                <div className="form-control">
+                <div className="form-control w-full">
                   <label className="label">
-                    <span className="label-text">Location</span>
+                    <span className="label-text text-sm sm:text-base">Location</span>
                   </label>
                   {isEditing ? (
                     <input
                       type="text"
-                      className="input input-bordered"
+                      className="input input-bordered w-full"
                       placeholder="Enter location"
                       value={formData.location}
                       onChange={(e) => setFormData({...formData, location: e.target.value})}
                     />
                   ) : (
-                    <div className="flex items-center gap-2 p-3 bg-base-100 rounded-lg">
-                      <MapPin className="w-4 h-4" />
-                      <span>{formData.location || 'Not provided'}</span>
+                    <div className="flex items-center gap-2 p-3 bg-base-100 rounded-lg w-full">
+                      <MapPin className="w-4 h-4 flex-shrink-0" />
+                      <span className="break-words min-w-0 flex-1">{formData.location || 'Not provided'}</span>
                     </div>
                   )}
                 </div>
@@ -411,71 +411,71 @@ const UserProfile = () => {
           </div>
 
           {/* Health Stats */}
-          <div className="card bg-base-200 shadow-lg">
-            <div className="card-body">
-              <h3 className="text-xl font-bold mb-4">Health Statistics</h3>
+          <div className="card bg-base-200 shadow-lg w-full">
+            <div className="card-body p-4 sm:p-6">
+              <h3 className="text-lg sm:text-xl font-bold mb-4">Health Statistics</h3>
               
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="form-control">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full">
+                <div className="form-control w-full">
                   <label className="label">
-                    <span className="label-text">Weight (kg)</span>
+                    <span className="label-text text-xs sm:text-sm">Weight (kg)</span>
                   </label>
                   {isEditing ? (
                     <input
                       type="number"
-                      className="input input-bordered"
+                      className="input input-bordered input-sm sm:input-md w-full"
                       value={formData.weight}
                       onChange={(e) => setFormData({...formData, weight: parseInt(e.target.value) || 0})}
                     />
                   ) : (
-                    <div className="text-center p-3 bg-base-100 rounded-lg">
-                      <div className="text-2xl font-bold">{formData.weight}</div>
+                    <div className="text-center p-2 sm:p-3 bg-base-100 rounded-lg w-full">
+                      <div className="text-lg sm:text-2xl font-bold">{formData.weight}</div>
                     </div>
                   )}
                 </div>
 
-                <div className="form-control">
+                <div className="form-control w-full">
                   <label className="label">
-                    <span className="label-text">Height (cm)</span>
+                    <span className="label-text text-xs sm:text-sm">Height (cm)</span>
                   </label>
                   {isEditing ? (
                     <input
                       type="number"
-                      className="input input-bordered"
+                      className="input input-bordered input-sm sm:input-md w-full"
                       value={formData.height}
                       onChange={(e) => setFormData({...formData, height: parseInt(e.target.value) || 0})}
                     />
                   ) : (
-                    <div className="text-center p-3 bg-base-100 rounded-lg">
-                      <div className="text-2xl font-bold">{formData.height}</div>
+                    <div className="text-center p-2 sm:p-3 bg-base-100 rounded-lg w-full">
+                      <div className="text-lg sm:text-2xl font-bold">{formData.height}</div>
                     </div>
                   )}
                 </div>
 
-                <div className="form-control">
+                <div className="form-control w-full">
                   <label className="label">
-                    <span className="label-text">Age</span>
+                    <span className="label-text text-xs sm:text-sm">Age</span>
                   </label>
                   {isEditing ? (
                     <input
                       type="number"
-                      className="input input-bordered"
+                      className="input input-bordered input-sm sm:input-md w-full"
                       value={formData.age}
                       onChange={(e) => setFormData({...formData, age: parseInt(e.target.value) || 0})}
                     />
                   ) : (
-                    <div className="text-center p-3 bg-base-100 rounded-lg">
-                      <div className="text-2xl font-bold">{formData.age}</div>
+                    <div className="text-center p-2 sm:p-3 bg-base-100 rounded-lg w-full">
+                      <div className="text-lg sm:text-2xl font-bold">{formData.age}</div>
                     </div>
                   )}
                 </div>
 
-                <div className="form-control">
+                <div className="form-control w-full">
                   <label className="label">
-                    <span className="label-text">BMI</span>
+                    <span className="label-text text-xs sm:text-sm">BMI</span>
                   </label>
-                  <div className="text-center p-3 bg-base-100 rounded-lg">
-                    <div className="text-2xl font-bold text-success">{formData.bmi}</div>
+                  <div className="text-center p-2 sm:p-3 bg-base-100 rounded-lg w-full">
+                    <div className="text-lg sm:text-2xl font-bold text-success">{formData.bmi}</div>
                   </div>
                 </div>
               </div>

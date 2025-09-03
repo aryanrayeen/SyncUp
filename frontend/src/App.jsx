@@ -15,6 +15,7 @@ import LoginPage from "./pages/LoginPage";
 import Tutorials from './pages/Tutorials'
 import Wellness from './pages/Wellness'
 import Workouts from './pages/Workouts'
+import Fitness from './pages/Fitness'
 import ProtectedRoute from './components/ProtectedRoute'
 import { Toaster } from "react-hot-toast";
 import ChatBot from "./components/ChatBot";
@@ -158,6 +159,22 @@ function App() {
                     }
                 />
                 <Route
+                    path="/fitness"
+                    element={
+                        <ProtectedRoute>
+                            <>
+                                <Navbar />
+                                <div className="flex">
+                                    <Sidebar />
+                                    <main className="flex-1">
+                                        <Fitness />
+                                    </main>
+                                </div>
+                            </>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
                     path="/goals"
                     element={
                         <ProtectedRoute>
@@ -233,7 +250,15 @@ function App() {
                     path="/achievements"
                     element={
                         <ProtectedRoute>
-                            <Achievements />
+                            <>
+                                <Navbar />
+                                <div className="flex">
+                                    <Sidebar />
+                                    <main className="flex-1">
+                                        <Achievements />
+                                    </main>
+                                </div>
+                            </>
                         </ProtectedRoute>
                     }
                 />

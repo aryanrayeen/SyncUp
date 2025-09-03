@@ -444,45 +444,52 @@ const ExpensesPage = () => {
 
 
         {/* Calendar at the bottom with daily totals */}
-        <div className="mt-16 flex flex-col items-center">
-          <h2 className="text-xl font-semibold mb-4 text-base-content">Finance Calendar</h2>
-          <Calendar
-              value={selectedDate || today}
-              activeStartDate={calendarMonth}
-              onActiveStartDateChange={handleCalendarMonthChange}
-              onClickDay={date => {
-                setSelectedDate(date);
-                setCalendarMonth(new Date(date.getFullYear(), date.getMonth(), 1));
+        <div className="mt-8 sm:mt-12 lg:mt-16 flex flex-col items-center">
+          <h2 className="text-lg sm:text-xl font-semibold mb-4 text-base-content">Finance Calendar</h2>
+          <div className="w-full max-w-full overflow-x-auto">
+            <Calendar
+                value={selectedDate || today}
+                activeStartDate={calendarMonth}
+                onActiveStartDateChange={handleCalendarMonthChange}
+                onClickDay={date => {
+                  setSelectedDate(date);
+                  setCalendarMonth(new Date(date.getFullYear(), date.getMonth(), 1));
+                }}
+              className="rounded-lg shadow-lg bg-base-200 p-2 sm:p-4 mx-auto"
+              style={{ 
+                width: '100%', 
+                maxWidth: '700px', 
+                fontSize: window.innerWidth < 640 ? '0.875rem' : '1.15rem',
+                minWidth: '280px'
               }}
-            className="rounded-lg shadow-lg bg-base-200 p-4"
-            style={{ width: '700px', fontSize: '1.15rem' }}
-            tileContent={({ date, view }) => {
-              if (view !== 'month') return null;
-              // Use local date string (YYYY-MM-DD) for calendar cell
-              const year = date.getFullYear();
-              const month = String(date.getMonth() + 1).padStart(2, '0');
-              const day = String(date.getDate()).padStart(2, '0');
-              const dateStr = `${year}-${month}-${day}`;
-              const txs = txByDate[dateStr] || [];
-              if (!txs.length) return null;
-              const totalIncome = txs.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-              const totalExpense = txs.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-              return (
-                <div className="flex flex-col items-center mt-1 space-y-0.5">
-                  {totalIncome > 0 && (
-                    <span className="inline-block text-xs bg-green-100 text-green-700 rounded px-1 font-bold">
-                      +{totalIncome}
-                    </span>
-                  )}
-                  {totalExpense > 0 && (
-                    <span className="inline-block text-xs bg-red-100 text-red-700 rounded px-1 font-bold">
-                      -{totalExpense}
-                    </span>
-                  )}
-                </div>
-              );
-            }}
-          />
+              tileContent={({ date, view }) => {
+                if (view !== 'month') return null;
+                // Use local date string (YYYY-MM-DD) for calendar cell
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const dateStr = `${year}-${month}-${day}`;
+                const txs = txByDate[dateStr] || [];
+                if (!txs.length) return null;
+                const totalIncome = txs.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+                const totalExpense = txs.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+                return (
+                  <div className="flex flex-col items-center mt-1 space-y-0.5">
+                    {totalIncome > 0 && (
+                      <span className="inline-block text-xs bg-green-100 text-green-700 rounded px-1 font-bold">
+                        +{totalIncome}
+                      </span>
+                    )}
+                    {totalExpense > 0 && (
+                      <span className="inline-block text-xs bg-red-100 text-red-700 rounded px-1 font-bold">
+                        -{totalExpense}
+                      </span>
+                    )}
+                  </div>
+                );
+              }}
+            />
+          </div>
         </div>
 
         {/* Modal for date details and CRUD */}
@@ -492,7 +499,7 @@ const ExpensesPage = () => {
               setSelectedDate(null);
             }
           }}>
-            <div className="modal-box" onClick={e => e.stopPropagation()}>
+            <div className="modal-box max-w-sm sm:max-w-md lg:max-w-lg" onClick={e => e.stopPropagation()}>
               <h3 className="font-bold text-lg mb-4">Transactions for {formatDate(selectedDate)}</h3>
               {txByDate[
                 (() => {
@@ -504,7 +511,7 @@ const ExpensesPage = () => {
                   return `${year}-${month}-${day}`;
                 })()
               ]?.length ? (
-                <ul className="divide-y">
+                <ul className="divide-y max-h-64 overflow-y-auto">
                   {txByDate[
                     (() => {
                       if (!selectedDate) return '';
@@ -514,13 +521,13 @@ const ExpensesPage = () => {
                       return `${year}-${month}-${day}`;
                     })()
                   ].map(tx => (
-                    <li key={tx._id} className="py-2 flex justify-between items-center">
-                      <div>
+                    <li key={tx._id} className="py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
                         <span className={`font-bold ${tx.type === 'income' ? 'text-success' : 'text-error'}`}>{tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}</span>
-                        <span className="ml-2">{tx.category}</span>
-                        {tx.description && <span className="ml-2 text-xs text-base-content/60">{tx.description}</span>}
+                        <span className="ml-2 break-words">{tx.category}</span>
+                        {tx.description && <span className="ml-2 text-xs text-base-content/60 block sm:inline">{tx.description}</span>}
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-shrink-0">
                         <button className="btn btn-xs btn-outline" onClick={() => handleEditTransaction(tx)}><Edit className="w-4 h-4" /></button>
                         <button className="btn btn-xs btn-outline btn-error" onClick={() => handleDeleteTransaction(tx._id)}><Trash2 className="w-4 h-4" /></button>
                       </div>
@@ -530,8 +537,8 @@ const ExpensesPage = () => {
               ) : (
                 <p className="text-base-content/60">No transactions for this date.</p>
               )}
-              <div className="modal-action">
-                <button className="btn btn-primary" onClick={() => {
+              <div className="modal-action flex-col sm:flex-row gap-2">
+                <button className="btn btn-primary order-1" onClick={() => {
                   // Always use selectedDate as local YYYY-MM-DD string
                   function toLocalDateString(date) {
                     if (!date) return '';
@@ -550,7 +557,7 @@ const ExpensesPage = () => {
                 }}>
                   <Plus className="w-4 h-4" /> Add Transaction
                 </button>
-                <button className="btn btn-ghost" onClick={() => setSelectedDate(null)}>Close</button>
+                <button className="btn btn-ghost order-2" onClick={() => setSelectedDate(null)}>Close</button>
               </div>
             </div>
           </div>

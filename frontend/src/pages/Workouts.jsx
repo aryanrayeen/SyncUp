@@ -124,23 +124,23 @@ const Workouts = () => {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-base-content mb-2">Workouts</h1>
-        <p className="text-base-content/70">Create and manage your workout plans</p>
+    <div className="p-3 sm:p-4 lg:p-6 max-w-full lg:max-w-7xl mx-auto">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-base-content mb-2">Workouts</h1>
+        <p className="text-sm sm:text-base text-base-content/70">Create and manage your workout plans</p>
       </div>
 
       {error && (
-        <div className="alert alert-error mb-6">
+        <div className="alert alert-error mb-4 sm:mb-6 text-sm">
           <span>{error}</span>
         </div>
       )}
 
       {/* Create Workout Plan Button */}
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <button
           onClick={handleCreateWorkoutPlan}
-          className="btn btn-primary"
+          className="btn btn-primary btn-sm sm:btn-md w-full sm:w-auto"
         >
           <Plus className="w-4 h-4 mr-2" />
           Create Workout Plan
@@ -148,14 +148,14 @@ const Workouts = () => {
       </div>
 
       {/* Categories and Exercises */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-base-content mb-4">Exercise Categories</h2>
-        <div className="space-y-4">
+      <div className="mb-6 sm:mb-8">
+        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-base-content mb-3 sm:mb-4">Exercise Categories</h2>
+        <div className="space-y-3 sm:space-y-4">
           {categories.map((category) => (
             <div key={category.id} className="card bg-base-200 shadow-sm">
               <div className="card-body p-0">
                 <button
-                  className="w-full text-left p-4 hover:bg-base-300 transition-colors border-none bg-transparent text-xl font-medium flex items-center justify-between"
+                  className="w-full text-left p-3 sm:p-4 hover:bg-base-300 transition-colors border-none bg-transparent text-lg sm:text-xl font-medium flex items-center justify-between"
                   type="button"
                   onClick={(e) => handleCategoryClick(e, category)}
                 >
@@ -168,8 +168,8 @@ const Workouts = () => {
                   </svg>
                 </button>
                 {selectedCategory?.id === category.id && (
-                  <div className="px-4 pb-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="px-3 sm:px-4 pb-3 sm:pb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                       {isLoading ? (
                         <div className="col-span-full flex justify-center">
                           <div className="loading loading-spinner"></div>
@@ -177,13 +177,13 @@ const Workouts = () => {
                       ) : dedupedCategoryExercises.length > 0 ? (
                         dedupedCategoryExercises.map((exercise) => (
                           <div key={exercise._id} className="card bg-base-100 shadow-sm border">
-                            <div className="card-body p-4">
-                              <h4 className="font-semibold">{exercise.name}</h4>
-                              <p className="text-sm text-base-content/70">{exercise.description}</p>
+                            <div className="card-body p-3 sm:p-4">
+                              <h4 className="font-semibold text-sm sm:text-base break-words">{exercise.name}</h4>
+                              <p className="text-xs sm:text-sm text-base-content/70">{exercise.description}</p>
                               <div className="card-actions justify-end mt-2">
                                 <button
                                   onClick={() => handleAddExercise(exercise)}
-                                  className="btn btn-sm btn-primary"
+                                  className="btn btn-xs sm:btn-sm btn-primary"
                                 >
                                   <Plus className="w-3 h-3 mr-1" />
                                   Add
@@ -194,7 +194,7 @@ const Workouts = () => {
                         ))
                       ) : (
                         <div className="col-span-full text-center py-4">
-                          <p className="text-base-content/60">No exercises found in this category</p>
+                          <p className="text-base-content/60 text-sm">No exercises found in this category</p>
                         </div>
                       )}
                     </div>
@@ -208,57 +208,57 @@ const Workouts = () => {
 
           {/* Workout Plans */}
           <div>
-            <h2 className="text-2xl font-bold text-base-content mb-4">Your Workout Plans</h2>
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-base-content mb-3 sm:mb-4">Your Workout Plans</h2>
             {workoutPlans.length === 0 ? (
               <div className="card bg-base-200">
-                <div className="card-body text-center">
-                  <Dumbbell className="w-16 h-16 mx-auto text-base-content/30 mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No workout plans yet</h3>
-                  <p className="text-base-content/70 mb-4">Create your first workout plan to get started</p>
+                <div className="card-body text-center p-4 sm:p-6">
+                  <Dumbbell className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-base-content/30 mb-4" />
+                  <h3 className="text-base sm:text-lg font-semibold mb-2">No workout plans yet</h3>
+                  <p className="text-sm sm:text-base text-base-content/70 mb-4">Create your first workout plan to get started</p>
                   <button
                     onClick={handleCreateWorkoutPlan}
-                    className="btn btn-primary"
+                    className="btn btn-primary btn-sm sm:btn-md"
                   >
                     Create Your First Plan
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {workoutPlans.map((plan) => (
                   <div key={plan._id} className="card bg-base-200 shadow-lg hover:shadow-xl transition-shadow">
                     <div 
-                      className="card-body cursor-pointer hover:bg-base-300 transition-colors"
+                      className="card-body cursor-pointer hover:bg-base-300 transition-colors p-4 sm:p-6"
                       onClick={() => handlePlanClick(plan)}
                     >
-                      <h3 className="card-title">{plan.name}</h3>
+                      <h3 className="card-title text-base sm:text-lg break-words">{plan.name}</h3>
                       
-                      <div className="flex items-center gap-4 text-sm text-base-content/60 mb-4">
+                      <div className="flex items-center gap-4 text-xs sm:text-sm text-base-content/60 mb-4">
                         <div className="flex items-center gap-1">
-                          <Target className="w-4 h-4" />
+                          <Target className="w-3 h-3 sm:w-4 sm:h-4" />
                           <span>{plan.exercises.length} exercises</span>
                         </div>
                       </div>
 
 
-                      <div className="card-actions justify-end mt-4">
+                      <div className="card-actions justify-end mt-4 gap-2">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleEditWorkoutPlan(plan);
                           }}
-                          className="btn btn-sm btn-outline"
+                          className="btn btn-xs sm:btn-sm btn-outline"
                         >
-                          <Edit className="w-4 h-4" />
+                          <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                         </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDeleteWorkoutPlan(plan._id);
                           }}
-                          className="btn btn-sm btn-error"
+                          className="btn btn-xs sm:btn-sm btn-error"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                         </button>
                       </div>
                     </div>

@@ -67,47 +67,47 @@ const Wellness = () => {
   };
 
   return (
-    <div className="p-6">
-      <div className="w-full max-w-3xl mx-auto">
-        <h2 className="text-3xl font-bold text-primary mb-8 text-center">ZEN SECTION</h2>
+    <div className="p-3 sm:p-4 lg:p-6">
+      <div className="w-full max-w-full lg:max-w-3xl mx-auto">
+        <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary mb-4 sm:mb-6 lg:mb-8 text-center">ZEN SECTION</h2>
         {/* Breathwork Section */}
-        <section className="bg-base-200 rounded-xl shadow-md p-8 mb-12">
-          <h3 className="text-2xl font-bold text-primary mb-4">Breathwork Assistance & Guide</h3>
-          <p className="mb-4 text-base-content/80">Practice mindful breathing. Set your inhale and exhale times, then start the timer to follow along.</p>
-          <div className="flex flex-col sm:flex-row gap-4 mb-4">
-            <div>
-              <label className="block mb-1">Inhale Time (seconds):</label>
-              <input type="number" min="1" value={customInhale} onChange={e => setCustomInhale(e.target.value)} className="input input-bordered w-24" />
+        <section className="bg-base-200 rounded-xl shadow-md p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 lg:mb-12">
+          <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-primary mb-3 sm:mb-4">Breathwork Assistance & Guide</h3>
+          <p className="mb-4 text-sm sm:text-base text-base-content/80">Practice mindful breathing. Set your inhale and exhale times, then start the timer to follow along.</p>
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4">
+            <div className="flex-1 sm:flex-none">
+              <label className="block mb-1 text-sm sm:text-base">Inhale Time (seconds):</label>
+              <input type="number" min="1" value={customInhale} onChange={e => setCustomInhale(e.target.value)} className="input input-bordered input-sm sm:input-md w-full sm:w-24" />
             </div>
-            <div>
-              <label className="block mb-1">Exhale Time (seconds):</label>
-              <input type="number" min="1" value={customExhale} onChange={e => setCustomExhale(e.target.value)} className="input input-bordered w-24" />
+            <div className="flex-1 sm:flex-none">
+              <label className="block mb-1 text-sm sm:text-base">Exhale Time (seconds):</label>
+              <input type="number" min="1" value={customExhale} onChange={e => setCustomExhale(e.target.value)} className="input input-bordered input-sm sm:input-md w-full sm:w-24" />
             </div>
-            <button className="btn btn-primary self-end" onClick={updateTimes}>Set Times</button>
+            <button className="btn btn-primary btn-sm sm:btn-md self-end w-full sm:w-auto" onClick={updateTimes}>Set Times</button>
           </div>
-          <div className="flex flex-col items-center gap-4">
-            <div className="text-xl font-semibold text-primary">{phase === 'inhale' ? 'Inhale' : 'Exhale'}</div>
-            <div className="text-5xl font-bold text-base-content">{timeLeft}s</div>
-            <div className="flex gap-4 mt-2">
-              <button className="btn btn-success" onClick={startBreathwork}>Start</button>
-              <button className="btn btn-error" onClick={stopBreathwork}>Stop</button>
+          <div className="flex flex-col items-center gap-3 sm:gap-4">
+            <div className="text-lg sm:text-xl font-semibold text-primary">{phase === 'inhale' ? 'Inhale' : 'Exhale'}</div>
+            <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-base-content">{timeLeft}s</div>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-2 w-full sm:w-auto">
+              <button className="btn btn-success btn-sm sm:btn-md" onClick={startBreathwork}>Start</button>
+              <button className="btn btn-error btn-sm sm:btn-md" onClick={stopBreathwork}>Stop</button>
             </div>
           </div>
         </section>
         {/* Guided Meditation Section */}
-        <section className="bg-base-200 rounded-xl shadow-md p-8">
-          <h3 className="text-2xl font-bold text-primary mb-4">Guided Meditation</h3>
-          <p className="mb-4 text-base-content/80">Find peace and calm with guided meditation. Here are some tips to get started:</p>
-          <ul className="list-disc pl-6 mb-6 text-base-content/80">
+        <section className="bg-base-200 rounded-xl shadow-md p-4 sm:p-6 lg:p-8">
+          <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-primary mb-3 sm:mb-4">Guided Meditation</h3>
+          <p className="mb-4 text-sm sm:text-base text-base-content/80">Find peace and calm with guided meditation. Here are some tips to get started:</p>
+          <ul className="list-disc pl-4 sm:pl-6 mb-4 sm:mb-6 text-sm sm:text-base text-base-content/80 space-y-1">
             <li>Find a quiet and comfortable place to sit.</li>
             <li>Close your eyes and focus on your breath.</li>
             <li>Let thoughts pass without judgment.</li>
             <li>Start with short sessions and gradually increase duration.</li>
             <li>Use calming music or guided videos for support.</li>
           </ul>
-          <div className="mb-6">
-            <h4 className="text-lg font-semibold mb-2">YouTube Videos</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="mb-4 sm:mb-6">
+            <h4 className="text-base sm:text-lg font-semibold mb-2">YouTube Videos</h4>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <div className="aspect-video">
                 <iframe
                   className="w-full h-full rounded-lg"

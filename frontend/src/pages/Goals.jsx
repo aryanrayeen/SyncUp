@@ -389,50 +389,57 @@ const Goals = () => {
         </div>
       </div>
       {/* Calendar Section */}
-      <div className="mt-10 flex flex-col items-center">
-        <h2 className="text-xl font-semibold mb-4 text-base-content">Calendar</h2>
-        <Calendar
-          onChange={setSelectedDate}
-          value={selectedDate}
-          className="rounded-lg shadow-lg bg-base-200 p-4"
-          tileClassName={() => 'text-base'}
-          style={{ width: '700px', fontSize: '1.15rem' }}
-          tileContent={({ date, view }) => {
-            if (view !== 'month') return null;
-            // Use local date string (YYYY-MM-DD) for matching
-            const localDateStr = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
-            const goalsForDay = goalsByDate[localDateStr] || [];
-            if (!goalsForDay.length) return null;
-            // Show up to 5 dots per row, wrap if more
-            const dotRows = [];
-            for (let i = 0; i < goalsForDay.length; i += 5) {
-              dotRows.push(goalsForDay.slice(i, i + 5));
-            }
-            return (
-              <div className="flex flex-col items-center mt-1 space-y-0.5">
-                {dotRows.map((row, rowIdx) => (
-                  <div key={rowIdx} className="flex justify-center gap-0.5">
-                    {row.map((goal, idx) => (
-                      <span
-                        key={goal._id || idx}
-                        className={`inline-block w-2 h-2 rounded-full border border-base-300 ${goal.completed ? 'bg-green-500' : 'bg-gray-400'}`}
-                        title={goal.title}
-                      ></span>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            );
-          }}
-          onClickDay={(date) => {
-            setModalDate(date);
-          }}
-        />
+      <div className="mt-6 sm:mt-8 lg:mt-10 flex flex-col items-center">
+        <h2 className="text-lg sm:text-xl font-semibold mb-4 text-base-content">Calendar</h2>
+        <div className="w-full max-w-full overflow-x-auto">
+          <Calendar
+            onChange={setSelectedDate}
+            value={selectedDate}
+            className="rounded-lg shadow-lg bg-base-200 p-2 sm:p-4 mx-auto"
+            tileClassName={() => 'text-xs sm:text-base'}
+            style={{ 
+              width: '100%', 
+              maxWidth: '700px', 
+              fontSize: window.innerWidth < 640 ? '0.875rem' : '1.15rem',
+              minWidth: '280px'
+            }}
+            tileContent={({ date, view }) => {
+              if (view !== 'month') return null;
+              // Use local date string (YYYY-MM-DD) for matching
+              const localDateStr = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+              const goalsForDay = goalsByDate[localDateStr] || [];
+              if (!goalsForDay.length) return null;
+              // Show up to 5 dots per row, wrap if more
+              const dotRows = [];
+              for (let i = 0; i < goalsForDay.length; i += 5) {
+                dotRows.push(goalsForDay.slice(i, i + 5));
+              }
+              return (
+                <div className="flex flex-col items-center mt-1 space-y-0.5">
+                  {dotRows.map((row, rowIdx) => (
+                    <div key={rowIdx} className="flex justify-center gap-0.5">
+                      {row.map((goal, idx) => (
+                        <span
+                          key={goal._id || idx}
+                          className={`inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full border border-base-300 ${goal.completed ? 'bg-green-500' : 'bg-gray-400'}`}
+                          title={goal.title}
+                        ></span>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              );
+            }}
+            onClickDay={(date) => {
+              setModalDate(date);
+            }}
+          />
+        </div>
 
         {/* Modal for goals on selected date */}
         {modalDate && (
           <div className="modal modal-open">
-            <div className="modal-box">
+            <div className="modal-box max-w-sm sm:max-w-md lg:max-w-lg">
               <h3 className="font-bold text-lg mb-4">Goals for {modalDate.toLocaleDateString()}</h3>
               <div className="space-y-2">
                 {(() => {
@@ -449,7 +456,7 @@ const Goals = () => {
                         onChange={() => toggleGoal(goal._id)}
                         className={`checkbox ${goal.completed ? 'checkbox-success' : 'checkbox-primary'}`}
                       />
-                      <span className={goal.completed ? 'line-through text-success' : ''}>{goal.title}</span>
+                      <span className={`flex-1 text-sm break-words ${goal.completed ? 'line-through text-success' : ''}`}>{goal.title}</span>
                       <span className="ml-auto text-xs text-base-content/50">{goal.completed ? 'Completed' : 'Pending'}</span>
                     </div>
                   ));
@@ -458,7 +465,7 @@ const Goals = () => {
               {/* Add Goal Inline Form */}
               <div className="mt-4">
                 <button
-                  className="btn btn-primary btn-sm"
+                  className="btn btn-primary btn-sm w-full sm:w-auto"
                   onClick={() => setShowAddForDate(true)}
                   type="button"
                 >
@@ -496,17 +503,17 @@ const Goals = () => {
                       onChange={e => setAddGoalTitle(e.target.value)}
                       required
                     />
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <button
                         type="button"
-                        className="btn btn-ghost btn-sm"
+                        className="btn btn-ghost btn-sm order-2 sm:order-1"
                         onClick={() => { setShowAddForDate(false); setAddGoalTitle(''); }}
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
-                        className="btn btn-primary btn-sm"
+                        className="btn btn-primary btn-sm order-1 sm:order-2"
                         disabled={isAddingGoalForDate}
                       >
                         {isAddingGoalForDate ? <span className="loading loading-spinner loading-sm"></span> : 'Add'}

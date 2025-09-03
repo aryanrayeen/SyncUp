@@ -15,6 +15,7 @@ import { useFitnessStore } from '../store/fitnessStore';
 import { useAuthStore } from '../store/authStore';
 import { useGoalsStore } from '../store/goalsStore';
 import { useFinanceStore } from '../store/financeStore';
+import { useMealStore } from '../store/mealStore';
 import { useNavigate } from 'react-router-dom';
 import { DollarSign, TrendingUp, Target, Activity, Heart, Scale, Plus, CheckCircle } from 'lucide-react';
 
@@ -38,6 +39,10 @@ const Dashboard = () => {
     getBMICategory, 
     getCalorieBalance, 
     getDailyProgress,
+    fetchWeeklyLogs,
+    getWeeklyExerciseData,
+    getTodayExerciseProgress,
+    weeklyLogs,
     isLoading,
     error
   } = useFitnessStore();
@@ -63,6 +68,14 @@ const Dashboard = () => {
     isLoading: financeLoading
   } = useFinanceStore();
 
+  const {
+    fetchWeeklyCalories,
+    getWeeklyCalorieData,
+    getTodayCalories,
+    weeklyCalories,
+    isLoading: mealLoading
+  } = useMealStore();
+
   useEffect(() => {
     const loadUserInfo = async () => {
       console.log('Dashboard - Loading user info...');
@@ -78,6 +91,12 @@ const Dashboard = () => {
     loadUserInfo();
     fetchGoals(); // Load goals when dashboard loads
     
+    // Load fitness data
+    fetchWeeklyLogs();
+    
+    // Load meal data
+    fetchWeeklyCalories();
+    
     // Load financial data
     if (user?.monthlyBudget) {
       setMonthlyBudget(user.monthlyBudget);
@@ -86,7 +105,35 @@ const Dashboard = () => {
       month: new Date().getMonth() + 1, 
       year: new Date().getFullYear() 
     });
-  }, [fetchUserInfo, fetchGoals, fetchTransactions, setMonthlyBudget, navigate, user]);
+  }, [fetchUserInfo, fetchGoals, fetchWeeklyLogs, fetchWeeklyCalories, fetchTransactions, setMonthlyBudget, navigate, user]);
+
+  // Refresh data when window gains focus (useful for real-time updates)
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchWeeklyLogs();
+      fetchWeeklyCalories();
+    };
+
+    const handleMealCompleted = () => {
+      console.log('Dashboard: Meal completed event received, refreshing data...');
+      fetchWeeklyCalories();
+    };
+
+    const handleWorkoutCompleted = () => {
+      console.log('Dashboard: Workout completed event received, refreshing data...');
+      fetchWeeklyLogs();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('mealCompleted', handleMealCompleted);
+    window.addEventListener('workoutCompleted', handleWorkoutCompleted);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('mealCompleted', handleMealCompleted);
+      window.removeEventListener('workoutCompleted', handleWorkoutCompleted);
+    };
+  }, [fetchWeeklyLogs, fetchWeeklyCalories]);
 
   if (isLoading && !userInfo) {
     console.log('Dashboard - Loading user info...');
@@ -114,6 +161,19 @@ const Dashboard = () => {
   const calorieBalance = getCalorieBalance();
   const dailyProgress = getDailyProgress();
 
+  // Get real data for charts
+  const weeklyCalorieData = getWeeklyCalorieData();
+  const todayCalories = getTodayCalories();
+  
+  // Mock exercise data until we implement proper tracking
+  const todayExerciseProgress = 65; // Mock percentage
+  const weeklyExerciseData = []; // Empty for now
+
+  // Debug logging
+  console.log('Dashboard - Weekly calorie data:', weeklyCalorieData);
+  console.log('Dashboard - Today calories:', todayCalories);
+  console.log('Dashboard - Today exercise progress:', todayExerciseProgress);
+
   // Finance calculations
   const currentMonthExpenses = getCurrentMonthExpenses();
   const currentMonthIncome = getCurrentMonthIncome();
@@ -129,28 +189,20 @@ const Dashboard = () => {
     }).format(amount);
   };
 
-  // Mock weekly data for charts (in real app, this would come from backend)
-  const weeklyCalorieData = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+  // Real weekly calorie chart data
+  const weeklyCalorieChartData = {
+    labels: weeklyCalorieData.map(day => day.day),
     datasets: [
       {
         label: 'Calorie Intake',
-        data: [
-          userInfo.caloriesIntake * 0.95, 
-          userInfo.caloriesIntake * 1.02, 
-          userInfo.caloriesIntake * 0.88, 
-          userInfo.caloriesIntake * 1.15, 
-          userInfo.caloriesIntake * 0.92, 
-          userInfo.caloriesIntake * 1.08, 
-          userInfo.caloriesIntake * 0.97
-        ],
+        data: weeklyCalorieData.map(day => day.calories),
         borderColor: 'rgb(34, 197, 94)',
         backgroundColor: 'rgba(34, 197, 94, 0.1)',
         tension: 0.4,
       },
       {
         label: 'Target',
-        data: Array(7).fill(userInfo.caloriesIntake),
+        data: weeklyCalorieData.map(() => userInfo?.caloriesIntake || 0),
         borderColor: 'rgb(239, 68, 68)',
         backgroundColor: 'rgba(239, 68, 68, 0.1)',
         borderDash: [5, 5],
@@ -163,7 +215,7 @@ const Dashboard = () => {
     labels: ['Completed', 'Remaining'],
     datasets: [
       {
-        data: [dailyProgress.exercise, 100 - dailyProgress.exercise],
+        data: [todayExerciseProgress, 100 - todayExerciseProgress],
         backgroundColor: ['#22c55e', '#e5e7eb'],
         borderWidth: 0,
       },
@@ -243,7 +295,7 @@ const Dashboard = () => {
           </div>
           <div className="stat-title text-xs sm:text-sm truncate">Exercise Goal</div>
           <div className="stat-value text-secondary text-lg sm:text-2xl break-words">{userInfo.exerciseMinutes} min</div>
-          <div className="stat-desc text-xs sm:text-sm truncate">{dailyProgress.exercise.toFixed(0)}% completed today</div>
+          <div className="stat-desc text-xs sm:text-sm truncate">{todayExerciseProgress.toFixed(0)}% completed today</div>
         </div>
 
         <div className="stat bg-base-200 rounded-lg shadow p-4 min-h-0">
@@ -253,7 +305,7 @@ const Dashboard = () => {
           <div className="stat-title text-xs sm:text-sm truncate">Calorie Target</div>
           <div className="stat-value text-accent text-lg sm:text-2xl break-words">{userInfo.caloriesIntake}</div>
           <div className="stat-desc text-xs sm:text-sm truncate">
-            {calorieBalance > 0 ? `+${calorieBalance}` : calorieBalance} cal balance
+            {todayCalories} cal consumed today
           </div>
         </div>
 
@@ -277,7 +329,7 @@ const Dashboard = () => {
           <div className="card-body">
             <h2 className="card-title text-lg">Weekly Calorie Intake</h2>
             <div className="h-64">
-              <Line data={weeklyCalorieData} options={chartOptions} />
+              <Line data={weeklyCalorieChartData} options={chartOptions} />
             </div>
           </div>
         </div>
@@ -292,7 +344,7 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="text-center mt-4">
-              <div className="text-2xl font-bold">{dailyProgress.exercise.toFixed(0)}%</div>
+              <div className="text-2xl font-bold">{todayExerciseProgress.toFixed(0)}%</div>
               <div className="text-base-content/70">of daily goal completed</div>
             </div>
           </div>
