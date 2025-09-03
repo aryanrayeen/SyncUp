@@ -588,10 +588,29 @@ const Trends = () => {
           <div className="card-body p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs sm:text-sm opacity-70">Est. Active Days/Month</p>
-                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-info">{metrics.activeDays}</p>
+                <p className="text-xs sm:text-sm opacity-70">Active Days this Month</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-info">{
+          (() => {
+            // Calculate days with at least one completed workout this month
+            const now = new Date();
+            const year = now.getUTCFullYear();
+            const month = now.getUTCMonth();
+            let daysSet = new Set();
+            if (dayTasks) {
+              Object.keys(dayTasks).forEach(dateStr => {
+                const d = new Date(dateStr);
+                if (d.getUTCFullYear() === year && d.getUTCMonth() === month) {
+                  const completedWorkouts = dayTasks[dateStr].completed.filter(t => t.type === 'workout');
+                  if (completedWorkouts.length > 0) {
+                    daysSet.add(dateStr);
+                  }
+                }
+              });
+            }
+            return daysSet.size;
+          })()
+        }</p>
               </div>
-              {/* Removed extra calendar icon */}
             </div>
           </div>
         </div>
