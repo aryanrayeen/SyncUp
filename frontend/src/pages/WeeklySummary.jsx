@@ -7,6 +7,27 @@ import { useAuthStore } from "../store/authStore";
 import { Link } from "react-router-dom";
 import useDayTasks, { formatDateUTC } from '../lib/useDayTasks';
 import { useGoalsStore } from '../store/goalsStore';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 const WeeklySummary = () => {
   const {
@@ -97,6 +118,51 @@ const WeeklySummary = () => {
   const calRange = maxCal - minCal;
   // Move the line chart slightly lower (set Y offset to -160)
   const calY = dailyCalories.map(cal => -160 - Math.round(((cal - minCal) / calRange) * 60));
+
+  // Prepare Chart.js data for calories chart (same style as Dashboard)
+  const weeklyCalorieChartData = {
+    labels: weekDays,
+    datasets: [
+      {
+        label: 'Calorie Intake',
+        data: dailyCalories,
+        borderColor: 'rgb(34, 197, 94)',
+        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        tension: 0.4,
+      },
+      {
+        label: 'Target',
+        data: dailyCalories.map(() => userInfo?.caloriesIntake || 2000),
+        borderColor: 'rgb(239, 68, 68)',
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        borderDash: [5, 5],
+        tension: 0.4,
+      },
+    ],
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+        },
+      },
+      x: {
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+        },
+      },
+    },
+  };
   
   // --- Goals Aggregation ---
   const weekDates = Array.from({ length: 7 }, (_, i) => {
@@ -213,35 +279,11 @@ const WeeklySummary = () => {
                       })()}
                     </div>
                   </div>
-                  {/* Calories (Line Chart) - now same size as bar chart */}
+                  {/* Calories (Chart.js Line Chart) - same style as Dashboard */}
                   <div>
                     <div className="font-semibold mb-2">Calories:</div>
-                    <div className="h-48 w-full flex justify-center items-end">
-                      <svg width={340} height={130} viewBox="0 0 340 130">
-                        {/* Y axis lines */}
-                        <line x1="45" y1="20" x2="285" y2="20" stroke="#ccc" />
-                        <line x1="45" y1="65" x2="285" y2="65" stroke="#ccc" />
-                        <line x1="45" y1="110" x2="285" y2="110" stroke="#ccc" />
-                        {/* Y axis labels */}
-                        <text x="18" y="25" fontSize="12">2.2k</text>
-                        <text x="18" y="70" fontSize="12">2k</text>
-                        <text x="18" y="115" fontSize="12">1.8k</text>
-                        {/* Line for calories - dynamic */}
-                        <polyline
-                          points={calY.map((y, i) => `${58 + i * 32},${y}` ).join(' ')}
-                          fill="none"
-                          stroke="#22c55e"
-                          strokeWidth="3"
-                        />
-                        {/* Day labels */}
-                        <text x="67" y="125" textAnchor="middle" fontSize="13">S</text>
-                        <text x="99" y="125" textAnchor="middle" fontSize="13">M</text>
-                        <text x="131" y="125" textAnchor="middle" fontSize="13">T</text>
-                        <text x="163" y="125" textAnchor="middle" fontSize="13">W</text>
-                        <text x="195" y="125" textAnchor="middle" fontSize="13">T</text>
-                        <text x="227" y="125" textAnchor="middle" fontSize="13">F</text>
-                        <text x="259" y="125" textAnchor="middle" fontSize="13">S</text>
-                      </svg>
+                    <div className="h-48 w-full">
+                      <Line data={weeklyCalorieChartData} options={chartOptions} />
                     </div>
                   </div>
                 </div>
@@ -545,7 +587,7 @@ const WeeklySummary = () => {
                       {completedGoals.map(goal => (
                         <div key={goal._id} className="rounded-lg px-2 py-1 flex justify-between items-center" style={{ backgroundColor: '#e0f2fe', color: '#222', fontSize: '1em', width: '80%' }}>
                           <span className="flex items-center"><span className="mr-2" style={{ color: '#3b82f6', fontSize: '1.2em' }}>●</span>{goal.title}</span>
-                          <span className="ml-2"><span className="inline-block w-6 h-6 rounded-full bg-success text-white flex items-center justify-center">&#10003;</span></span>
+                          <span className="ml-2"><span className="w-6 h-6 rounded-full bg-success text-white flex items-center justify-center">&#10003;</span></span>
                         </div>
                       ))}
                     </div>

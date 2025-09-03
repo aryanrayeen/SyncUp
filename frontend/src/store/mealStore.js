@@ -83,23 +83,27 @@ export const useMealStore = create((set, get) => ({
   // Get weekly calorie data for charts
   getWeeklyCalorieData: () => {
     const { weeklyCalories } = get();
-    const last7Days = [];
+    const weekData = [];
     const today = new Date();
     
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
+    // Calculate weekly range starting from Sunday (same as Weekly Summary)
+    const utcDayOfWeek = today.getUTCDay(); // 0 (Sun) - 6 (Sat)
+    const weekStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - utcDayOfWeek));
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(weekStart);
+      date.setUTCDate(weekStart.getUTCDate() + i); // Sunday to Saturday
       const dateStr = date.toISOString().split('T')[0];
       
       const dayData = weeklyCalories.find(item => item.date === dateStr);
-      last7Days.push({
+      weekData.push({
         date: dateStr,
         day: date.toLocaleDateString('en-US', { weekday: 'short' }),
         calories: dayData?.totalCalories || 0
       });
     }
     
-    return last7Days;
+    return weekData;
   },
 
   // Fetch weekly calorie intake data

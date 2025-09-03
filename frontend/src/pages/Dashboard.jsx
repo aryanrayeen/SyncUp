@@ -230,9 +230,14 @@ const Dashboard = () => {
     };
   } else {
     // Fallback to dayTasks data (same calculation as Weekly Summary)
+    // Calculate weekly range starting from Sunday (same as Weekly Summary)
+    const today = new Date();
+    const utcDayOfWeek = today.getUTCDay(); // 0 (Sun) - 6 (Sat)
+    const weekStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - utcDayOfWeek));
+    
     const weeklyCaloriesFromTasks = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date();
-      d.setUTCDate(d.getUTCDate() - (6 - i)); // Last 7 days
+      const d = new Date(weekStart);
+      d.setUTCDate(weekStart.getUTCDate() + i); // Sunday to Saturday
       const dateStr = formatDateUTC(d);
       const dayData = dayTasks[dateStr] || { pending: [], completed: [] };
       const calories = dayData.completed
