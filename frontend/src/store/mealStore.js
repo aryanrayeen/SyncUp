@@ -66,6 +66,10 @@ export const useMealStore = create((set, get) => ({
       }
       
       set({ dailyMealLogs: updatedLogs, isLoading: false });
+      
+      // Refresh weekly calories data after logging meal
+      get().fetchWeeklyCalories();
+      
       return response.data;
     } catch (error) {
       set({ 

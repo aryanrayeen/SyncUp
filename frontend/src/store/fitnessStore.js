@@ -19,6 +19,10 @@ export const useFitnessStore = create((set, get) => ({
   userInfo: null,
   isLoading: false,
   error: null,
+  
+  // Exercise progress data
+  todayExerciseProgress: 0,
+  weeklyExerciseData: [],
 
   // Fetch user's latest fitness information
   fetchUserInfo: async () => {
@@ -115,6 +119,82 @@ export const useFitnessStore = create((set, get) => ({
       return response.data.logs;
     } catch (error) {
       set({ error: error.response?.data?.message || 'Failed to fetch weekly fitness logs', isLoading: false });
+      return [];
+    }
+  },
+
+  // Fetch today's exercise progress based on completed tasks
+  fetchTodayExerciseProgress: async () => {
+    try {
+      const today = new Date();
+      const year = today.getUTCFullYear();
+      const month = String(today.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(today.getUTCDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+      
+      const response = await api.get(`/day-tasks/${dateStr}`);
+      const dayData = response.data || { pending: [], completed: [] };
+      
+      const workoutTasks = [...dayData.pending, ...dayData.completed].filter(task => task.type === 'workout');
+      const completedWorkouts = dayData.completed.filter(task => task.type === 'workout');
+      
+      const progress = workoutTasks.length === 0 ? 0 : (completedWorkouts.length / workoutTasks.length) * 100;
+      
+      set({ todayExerciseProgress: progress });
+      return progress;
+    } catch (error) {
+      console.error('Error fetching today exercise progress:', error);
+      set({ todayExerciseProgress: 0 });
+      return 0;
+    }
+  },
+
+  // Fetch weekly exercise data for charts
+  fetchWeeklyExerciseData: async () => {
+    try {
+      const weekData = [];
+      const today = new Date();
+      
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setUTCDate(date.getUTCDate() - i);
+        const year = date.getUTCFullYear();
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+        
+        try {
+          const response = await api.get(`/day-tasks/${dateStr}`);
+          const dayData = response.data || { pending: [], completed: [] };
+          
+          const workoutTasks = [...dayData.pending, ...dayData.completed].filter(task => task.type === 'workout');
+          const completedWorkouts = dayData.completed.filter(task => task.type === 'workout');
+          
+          const progress = workoutTasks.length > 0 ? (completedWorkouts.length / workoutTasks.length) * 100 : 0;
+          
+          weekData.push({
+            date: dateStr,
+            day: date.toLocaleDateString('en-US', { weekday: 'short' }),
+            progress: progress,
+            completed: completedWorkouts.length,
+            total: workoutTasks.length
+          });
+        } catch (error) {
+          weekData.push({
+            date: dateStr,
+            day: date.toLocaleDateString('en-US', { weekday: 'short' }),
+            progress: 0,
+            completed: 0,
+            total: 0
+          });
+        }
+      }
+      
+      set({ weeklyExerciseData: weekData });
+      return weekData;
+    } catch (error) {
+      console.error('Error fetching weekly exercise data:', error);
+      set({ weeklyExerciseData: [] });
       return [];
     }
   },

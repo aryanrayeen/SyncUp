@@ -18,6 +18,7 @@ import { useFinanceStore } from '../store/financeStore';
 import { useMealStore } from '../store/mealStore';
 import { useNavigate } from 'react-router-dom';
 import { DollarSign, TrendingUp, Target, Activity, Heart, Scale, Plus, CheckCircle } from 'lucide-react';
+import useDayTasks, { formatDateUTC } from '../lib/useDayTasks';
 
 ChartJS.register(
   CategoryScale,
@@ -40,8 +41,6 @@ const Dashboard = () => {
     getCalorieBalance, 
     getDailyProgress,
     fetchWeeklyLogs,
-    getWeeklyExerciseData,
-    getTodayExerciseProgress,
     weeklyLogs,
     isLoading,
     error
@@ -75,6 +74,9 @@ const Dashboard = () => {
     weeklyCalories,
     isLoading: mealLoading
   } = useMealStore();
+
+  // Use the same hook as Weekly Summary for real-time task data
+  const { dayTasks } = useDayTasks();
 
   useEffect(() => {
     const loadUserInfo = async () => {
@@ -119,7 +121,7 @@ const Dashboard = () => {
       fetchWeeklyCalories();
     };
 
-    const handleWorkoutCompleted = () => {
+    const handleWorkoutCompleted = async () => {
       console.log('Dashboard: Workout completed event received, refreshing data...');
       fetchWeeklyLogs();
     };
@@ -133,7 +135,7 @@ const Dashboard = () => {
       window.removeEventListener('mealCompleted', handleMealCompleted);
       window.removeEventListener('workoutCompleted', handleWorkoutCompleted);
     };
-  }, [fetchWeeklyLogs, fetchWeeklyCalories]);
+  }, []); // Remove dependencies to prevent infinite loops
 
   if (isLoading && !userInfo) {
     console.log('Dashboard - Loading user info...');
@@ -161,18 +163,30 @@ const Dashboard = () => {
   const calorieBalance = getCalorieBalance();
   const dailyProgress = getDailyProgress();
 
+  // Calculate today's exercise progress using dayTasks (same as Weekly Summary)
+  const today = new Date();
+  const todayDateStr = formatDateUTC(today);
+  const todayTasks = dayTasks[todayDateStr] || { pending: [], completed: [] };
+  const todayWorkoutTasks = [...todayTasks.pending, ...todayTasks.completed].filter(task => task.type === 'workout');
+  const todayCompletedWorkouts = todayTasks.completed.filter(task => task.type === 'workout');
+  const todayExerciseProgress = todayWorkoutTasks.length === 0 ? 0 : (todayCompletedWorkouts.length / todayWorkoutTasks.length) * 100;
+
+  // Calculate today's meal progress using dayTasks
+  const todayMealTasks = [...todayTasks.pending, ...todayTasks.completed].filter(task => task.type === 'meal');
+  const todayCompletedMeals = todayTasks.completed.filter(task => task.type === 'meal');
+  const todayCaloriesFromTasks = todayCompletedMeals
+    .filter(meal => meal.calories)
+    .reduce((sum, meal) => sum + meal.calories, 0);
+
   // Get real data for charts
   const weeklyCalorieData = getWeeklyCalorieData();
-  const todayCalories = getTodayCalories();
-  
-  // Mock exercise data until we implement proper tracking
-  const todayExerciseProgress = 65; // Mock percentage
-  const weeklyExerciseData = []; // Empty for now
+  const todayCalories = getTodayCalories() || todayCaloriesFromTasks; // Fallback to task-based calculation
 
   // Debug logging
   console.log('Dashboard - Weekly calorie data:', weeklyCalorieData);
   console.log('Dashboard - Today calories:', todayCalories);
   console.log('Dashboard - Today exercise progress:', todayExerciseProgress);
+  console.log('Dashboard - Today tasks:', todayTasks);
 
   // Finance calculations
   const currentMonthExpenses = getCurrentMonthExpenses();
@@ -189,27 +203,68 @@ const Dashboard = () => {
     }).format(amount);
   };
 
-  // Real weekly calorie chart data
-  const weeklyCalorieChartData = {
-    labels: weeklyCalorieData.map(day => day.day),
-    datasets: [
-      {
-        label: 'Calorie Intake',
-        data: weeklyCalorieData.map(day => day.calories),
-        borderColor: 'rgb(34, 197, 94)',
-        backgroundColor: 'rgba(34, 197, 94, 0.1)',
-        tension: 0.4,
-      },
-      {
-        label: 'Target',
-        data: weeklyCalorieData.map(() => userInfo?.caloriesIntake || 0),
-        borderColor: 'rgb(239, 68, 68)',
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-        borderDash: [5, 5],
-        tension: 0.4,
-      },
-    ],
-  };
+  // Real weekly calorie chart data - use dayTasks if mealStore data is empty
+  let weeklyCalorieChartData;
+  
+  if (weeklyCalorieData && weeklyCalorieData.length > 0 && weeklyCalorieData.some(day => day.calories > 0)) {
+    // Use mealStore data if available and has real data
+    weeklyCalorieChartData = {
+      labels: weeklyCalorieData.map(day => day.day),
+      datasets: [
+        {
+          label: 'Calorie Intake',
+          data: weeklyCalorieData.map(day => day.calories),
+          borderColor: 'rgb(34, 197, 94)',
+          backgroundColor: 'rgba(34, 197, 94, 0.1)',
+          tension: 0.4,
+        },
+        {
+          label: 'Target',
+          data: weeklyCalorieData.map(() => userInfo?.caloriesIntake || 0),
+          borderColor: 'rgb(239, 68, 68)',
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          borderDash: [5, 5],
+          tension: 0.4,
+        },
+      ],
+    };
+  } else {
+    // Fallback to dayTasks data (same calculation as Weekly Summary)
+    const weeklyCaloriesFromTasks = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - (6 - i)); // Last 7 days
+      const dateStr = formatDateUTC(d);
+      const dayData = dayTasks[dateStr] || { pending: [], completed: [] };
+      const calories = dayData.completed
+        .filter(t => t.type === 'meal' && t.calories)
+        .reduce((sum, t) => sum + t.calories, 0);
+      return {
+        day: d.toLocaleDateString('en-US', { weekday: 'short' }),
+        calories
+      };
+    });
+
+    weeklyCalorieChartData = {
+      labels: weeklyCaloriesFromTasks.map(day => day.day),
+      datasets: [
+        {
+          label: 'Calorie Intake',
+          data: weeklyCaloriesFromTasks.map(day => day.calories),
+          borderColor: 'rgb(34, 197, 94)',
+          backgroundColor: 'rgba(34, 197, 94, 0.1)',
+          tension: 0.4,
+        },
+        {
+          label: 'Target',
+          data: weeklyCaloriesFromTasks.map(() => userInfo?.caloriesIntake || 0),
+          borderColor: 'rgb(239, 68, 68)',
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          borderDash: [5, 5],
+          tension: 0.4,
+        },
+      ],
+    };
+  }
 
   const exerciseProgressData = {
     labels: ['Completed', 'Remaining'],

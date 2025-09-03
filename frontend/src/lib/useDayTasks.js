@@ -61,6 +61,20 @@ export default function useDayTasks() {
     const dateStr = formatDateUTC(date);
     const prevDay = dayTasks[dateStr] || { pending: [], completed: [] };
     let completedItem = { ...item };
+    
+    // If completing a meal plan, log it to meal store
+    if (item.type === 'meal') {
+      try {
+        // Import meal store to log meal completion
+        const { useMealStore } = await import('../store/mealStore');
+        const { logDailyMeal } = useMealStore.getState();
+        await logDailyMeal(item.id, dateStr);
+        console.log('Meal logged to meal store:', item.name, dateStr);
+      } catch (err) {
+        console.warn('Could not log meal to meal store:', err);
+      }
+    }
+    
     // If completing a workout, attach its plan (exercises) if not present
     if (item.type === 'workout' && !item.plan) {
       try {
@@ -73,11 +87,19 @@ export default function useDayTasks() {
         console.warn('Could not fetch workout plan for completed workout:', err);
       }
     }
+    
     const newDay = {
       pending: prevDay.pending.filter(i => i.id !== item.id),
       completed: [...prevDay.completed, completedItem],
     };
     await saveDay(date, newDay);
+    
+    // Dispatch custom events to notify other components
+    if (item.type === 'meal') {
+      window.dispatchEvent(new CustomEvent('mealCompleted', { detail: { item, date: dateStr } }));
+    } else if (item.type === 'workout') {
+      window.dispatchEvent(new CustomEvent('workoutCompleted', { detail: { item, date: dateStr } }));
+    }
   }, [dayTasks]);
 
   const uncomplete = useCallback(async (date, item) => {
