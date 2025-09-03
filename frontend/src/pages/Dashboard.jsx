@@ -343,7 +343,7 @@ const Dashboard = () => {
           <div className="stat-title text-xs sm:text-sm truncate">Current Weight</div>
           <div className="stat-value text-primary text-lg sm:text-2xl break-words">{userInfo.weight} kg</div>
           {userInfo.bmi && (
-            <div className={`stat-desc text-xs sm:text-sm ${bmiInfo?.color} truncate`}>
+            <div className={`stat-desc text-gray-500 text-xs sm:text-sm ${bmiInfo?.color} truncate`}>
               BMI: {userInfo.bmi.toFixed(1)} ({bmiInfo?.category})
             </div>
           )}
@@ -359,25 +359,25 @@ const Dashboard = () => {
         </div>
 
         <div className="stat bg-base-200 rounded-lg shadow p-4 min-h-0">
-          <div className="stat-figure text-accent flex-shrink-0">
+          <div className="stat-figure text-red-500 flex-shrink-0">
             <Heart size={20} className="sm:w-6 sm:h-6" />
           </div>
           <div className="stat-title text-xs sm:text-sm truncate">Calorie Target</div>
-          <div className="stat-value text-accent text-lg sm:text-2xl break-words">{userInfo.caloriesIntake}</div>
+          <div className="stat-value text-green-600 text-lg sm:text-2xl break-words">{userInfo.caloriesIntake}</div>
           <div className="stat-desc text-xs sm:text-sm truncate">
             {todayCalories} cal consumed today
           </div>
         </div>
 
         <div className="stat bg-base-200 rounded-lg shadow p-4 min-h-0">
-          <div className="stat-figure text-warning flex-shrink-0">
+          <div className="stat-figure text-green-600 flex-shrink-0">
             <DollarSign size={20} className="sm:w-6 sm:h-6" />
           </div>
           <div className="stat-title text-xs sm:text-sm truncate">Monthly Budget</div>
-          <div className="stat-value text-warning text-lg sm:text-2xl break-words overflow-hidden">
+          <div className="stat-value text-blue-500 text-lg sm:text-2xl break-words overflow-hidden">
             <span className="block truncate">{formatCurrency(monthlyBudget || 0)}</span>
           </div>
-          <div className={`stat-desc text-xs sm:text-sm truncate ${remainingBudget >= 0 ? 'text-success' : 'text-error'}`}>
+          <div className={`stat-desc text-xs sm:text-sm truncate ${remainingBudget >= 0 ? 'text-green-600' : 'text-error'}`}>
             {formatCurrency(remainingBudget)} remaining
           </div>
         </div>
@@ -405,7 +405,7 @@ const Dashboard = () => {
             </div>
             <div className="text-center mt-4">
               <div className="text-2xl font-bold">{todayExerciseProgress.toFixed(0)}%</div>
-              <div className="text-base-content/70">of daily goal completed</div>
+              <div className="text-base-content/70">of daily exercise plans completed</div>
             </div>
           </div>
         </div>

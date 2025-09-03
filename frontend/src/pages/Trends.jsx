@@ -521,7 +521,7 @@ const Trends = () => {
           className="card bg-accent/10 shadow-lg cursor-pointer transition hover:scale-105"
         >
           <div className="card-body p-4 sm:p-6 flex items-center justify-center">
-            <span className="text-base sm:text-lg lg:text-xl font-semibold text-accent">Wellness</span>
+            <span className="text-base sm:text-lg lg:text-xl font-semibold text-primary">Wellness</span>
           </div>
         </Link>
         {/* Meal Plan Button */}
