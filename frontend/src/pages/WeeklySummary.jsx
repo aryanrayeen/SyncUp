@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { useFitnessStore } from "../store/fitnessStore";
@@ -6,6 +6,7 @@ import { useFinanceStore } from "../store/financeStore";
 import { useAuthStore } from "../store/authStore";
 import { Link } from "react-router-dom";
 import useDayTasks, { formatDateUTC } from '../lib/useDayTasks';
+import { useGoalsStore } from '../store/goalsStore';
 
 const WeeklySummary = () => {
   const {
@@ -16,12 +17,15 @@ const WeeklySummary = () => {
     weeklyLogs,
     fetchWeeklyLogs
   } = useFitnessStore();
+  // Tooltip state for goals chart dots
+  const [hoveredDot, setHoveredDot] = useState(null);
   const {
     transactions,
     fetchTransactions,
     monthlyBudget
   } = useFinanceStore();
   const { user } = useAuthStore();
+  const { goals, fetchGoals, getGoalsByStatus, getGoalStats } = useGoalsStore();
   const bmiInfo = userInfo?.bmi ? getBMICategory(userInfo.bmi) : null;
   const calorieBalance = getCalorieBalance();
   const dailyProgress = getDailyProgress();
@@ -34,9 +38,10 @@ const WeeklySummary = () => {
   const weekEnd = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - utcDayOfWeek + 6, 23, 59, 59, 999));
 
   useEffect(() => {
+    fetchGoals();
     fetchWeeklyLogs();
     fetchTransactions();
-  }, [fetchWeeklyLogs, fetchTransactions]);
+  }, [fetchGoals, fetchWeeklyLogs, fetchTransactions]);
 
   // --- Weekly Finances Aggregation ---
   const weekTransactions = (transactions || []).filter(tx => {
@@ -92,6 +97,25 @@ const WeeklySummary = () => {
   const calRange = maxCal - minCal;
   // Move the line chart slightly lower (set Y offset to -160)
   const calY = dailyCalories.map(cal => -160 - Math.round(((cal - minCal) / calRange) * 60));
+  
+  // --- Goals Aggregation ---
+  const weekDates = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart);
+    d.setUTCDate(weekStart.getUTCDate() + i);
+    return formatDateUTC(d);
+  });
+  // Filter goals for this week
+  const weeklyGoals = goals.filter(goal => weekDates.includes(goal.date));
+  const completedGoals = weeklyGoals.filter(goal => goal.completed);
+  const ongoingGoals = weeklyGoals.filter(goal => !goal.completed);
+  const totalGoals = weeklyGoals.length;
+  const completedCount = completedGoals.length;
+  // Progress percentage
+  const progressPercent = totalGoals > 0 ? Math.round((completedCount / totalGoals) * 100) : 0;
+
+  // Daily completion chart
+  const dailyGoalCounts = weekDates.map(date => weeklyGoals.filter(goal => goal.date === date && goal.completed).length);
+
   return (
     <div className="flex min-h-screen">
       <Sidebar />
@@ -427,103 +451,107 @@ const WeeklySummary = () => {
                 <div className="font-semibold mb-2">Tasks Completed:</div>
                 <div className="mb-2">This Week:</div>
                 <div className="flex items-center mb-2">
-                  {(() => {
-                    const completed = 5;
-                    const total = 19;
-                    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
-                    return (
-                      <div className="flex items-center w-full">
-                        <div className="relative" style={{ width: '60%' }}>
-                          <div className="w-full h-3 bg-base-300 rounded-full">
-                            <div className="h-3" style={{ width: `${percent}%`, backgroundColor: '#60a5fa', borderRadius: '9999px' }}></div>
-                          </div>
-                          <div className="absolute left-0 top-5 text-xs">0%</div>
-                          <div className="absolute left-1/2 top-5 transform -translate-x-1/2 text-xs">50%</div>
-                          <div className="absolute right-0 top-5 text-xs">100%</div>
-                        </div>
-                        <span className="ml-4 text-base font-semibold">{completed} / {total} tasks</span>
+                  <div className="flex items-center w-full">
+                    <div className="relative" style={{ width: '60%' }}>
+                      <div className="w-full h-3 bg-base-300 rounded-full">
+                        <div className="h-3" style={{ width: `${progressPercent}%`, backgroundColor: '#60a5fa', borderRadius: '9999px' }}></div>
                       </div>
-                    );
-                  })()}
+                      <div className="absolute left-0 top-5 text-xs">0%</div>
+                      <div className="absolute left-1/2 top-5 transform -translate-x-1/2 text-xs">50%</div>
+                      <div className="absolute right-0 top-5 text-xs">100%</div>
+                    </div>
+                    <span className="ml-4 text-base font-semibold">{completedCount} / {totalGoals} tasks</span>
+                  </div>
                 </div>
                 {/* Dot Graph for daily tasks - fixed alignment and y-axis bar */}
                 <div className="mt-0 mb-0 flex justify-center">
-                  <svg width="600" height="200" viewBox="0 0 520 200">
-                    {/* Y axis bar */}
-                    <line x1="60" y1="30" x2="60" y2="170" stroke="#222" strokeWidth="2" />
-                    {/* X axis */}
-                    <line x1="60" y1="170" x2="500" y2="170" stroke="#222" />
-                    {/* Dots for each day (example data) - smaller radius, more vertical space */}
-                    {/* S */}
-                    <circle cx="100" cy="60" r="7" fill="#60a5fa" />
-                    <circle cx="100" cy="90" r="7" fill="#bbb" />
-                    <circle cx="100" cy="120" r="7" fill="#bbb" />
-                    {/* M */}
-                    <circle cx="160" cy="60" r="7" fill="#60a5fa" />
-                    <circle cx="160" cy="90" r="7" fill="#bbb" />
-                    <circle cx="160" cy="120" r="7" fill="#bbb" />
-                    <circle cx="160" cy="150" r="7" fill="#bbb" />
-                    {/* T */}
-                    <circle cx="220" cy="60" r="7" fill="#60a5fa" />
-                    <circle cx="220" cy="90" r="7" fill="#bbb" />
-                    <circle cx="220" cy="120" r="7" fill="#bbb" />
-                    <circle cx="220" cy="150" r="7" fill="#bbb" />
-                    {/* W */}
-                    <circle cx="280" cy="60" r="7" fill="#60a5fa" />
-                    <circle cx="280" cy="90" r="7" fill="#bbb" />
-                    <circle cx="280" cy="120" r="7" fill="#bbb" />
-                    <circle cx="280" cy="150" r="7" fill="#bbb" />
-                    {/* T */}
-                    <circle cx="340" cy="60" r="7" fill="#60a5fa" />
-                    <circle cx="340" cy="90" r="7" fill="#bbb" />
-                    <circle cx="340" cy="120" r="7" fill="#bbb" />
-                    {/* F */}
-                    <circle cx="400" cy="60" r="7" fill="#60a5fa" />
-                    <circle cx="400" cy="90" r="7" fill="#bbb" />
-                    <circle cx="400" cy="120" r="7" fill="#bbb" />
-                    <circle cx="400" cy="150" r="7" fill="#bbb" />
-                    {/* S */}
-                    <circle cx="460" cy="60" r="7" fill="#60a5fa" />
-                    <circle cx="460" cy="90" r="7" fill="#bbb" />
-                    <circle cx="460" cy="120" r="7" fill="#bbb" />
-                    <circle cx="460" cy="150" r="7" fill="#bbb" />
-                    {/* Day labels - spaced under dots */}
-                    <text x="100" y="190" textAnchor="middle" fontSize="16">S</text>
-                    <text x="160" y="190" textAnchor="middle" fontSize="16">M</text>
-                    <text x="220" y="190" textAnchor="middle" fontSize="16">T</text>
-                    <text x="280" y="190" textAnchor="middle" fontSize="16">W</text>
-                    <text x="340" y="190" textAnchor="middle" fontSize="16">T</text>
-                    <text x="400" y="190" textAnchor="middle" fontSize="16">F</text>
-                    <text x="460" y="190" textAnchor="middle" fontSize="16">S</text>
-                  </svg>
+                  {/* Chart with interactive tooltips for each dot */}
+                  {(() => {
+                    const [hovered, setHovered] = useState(null);
+                    return (
+                      <div style={{ position: 'relative', width: 600, height: 200 }}>
+                        <svg width="600" height="200" viewBox="0 0 520 200">
+                          {/* Y axis bar */}
+                          <line x1="60" y1="30" x2="60" y2="170" stroke="#222" strokeWidth="2" />
+                          {/* X axis */}
+                          <line x1="60" y1="170" x2="500" y2="170" stroke="#222" />
+                          {/* Dots for each day - stacked from bottom, with tooltips */}
+                          {weekDates.map((date, i) => {
+                            const x = 100 + i * 60;
+                            const dayGoals = weeklyGoals.filter(goal => goal.date === date);
+                            const baseY = 170 - 18;
+                            return dayGoals.map((goal, j) => {
+                              const isCompleted = goal.completed;
+                              const color = isCompleted ? '#60a5fa' : '#bbb';
+                              const y = baseY - j * 30;
+                              return (
+                                <circle
+                                  key={`g-${i}-${j}`}
+                                  cx={x}
+                                  cy={y}
+                                  r="7"
+                                  fill={color}
+                                  style={{ cursor: 'pointer' }}
+                                  onMouseEnter={() => setHoveredDot({ x, y, title: goal.title, status: isCompleted ? 'Completed' : 'Pending' })}
+                                  onMouseLeave={() => setHoveredDot(null)}
+                                />
+                              );
+                            });
+                          })}
+                          {/* Day labels - spaced under dots */}
+                          {weekDays.map((d, i) => (
+                            <text key={d} x={100 + i * 60} y="190" textAnchor="middle" fontSize="16">{d}</text>
+                          ))}
+                        </svg>
+                        {hovered && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              left: hovered.x - 60,
+                              top: hovered.y - 40,
+                              background: '#fff',
+                              color: '#222',
+                              borderRadius: 8,
+                              padding: '6px 12px',
+                              fontSize: 13,
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                              zIndex: 20,
+                              pointerEvents: 'none',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {hovered.title} <span style={{ color: hovered.status === 'Completed' ? '#22c55e' : '#bbb', fontWeight: 600 }}>({hovered.status})</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* On-going Tasks */}
                   <div>
                     <div className="font-semibold mb-2">On-going Tasks:</div>
                     <div className="flex flex-col gap-2">
-                      <div className="rounded-lg px-2 py-1 flex justify-between items-center" style={{ backgroundColor: '#e0f2fe', color: '#222', fontSize: '1em', width: '80%' }}>
-                        <span className="flex items-center"><span className="mr-2" style={{ color: '#3b82f6', fontSize: '1.2em' }}>●</span>Learn Adobe Premier Pro</span>
-                        <span>3/7 Days</span>
-                      </div>
-                      <div className="rounded-lg px-2 py-1 flex justify-between items-center" style={{ backgroundColor: '#e0f2fe', color: '#222', fontSize: '1em', width: '80%' }}>
-                        <span className="flex items-center"><span className="mr-2" style={{ color: '#3b82f6', fontSize: '1.2em' }}>●</span>Finish CSE471 Slide #2</span>
-                        <span>5/7 Days</span>
-                      </div>
+                      {ongoingGoals.length === 0 && <div className="text-xs text-base-content/60">No ongoing tasks this week.</div>}
+                      {ongoingGoals.map(goal => (
+                        <div key={goal._id} className="rounded-lg px-2 py-1 flex justify-between items-center" style={{ backgroundColor: '#e0f2fe', color: '#222', fontSize: '1em', width: '80%' }}>
+                          <span className="flex items-center"><span className="mr-2" style={{ color: '#3b82f6', fontSize: '1.2em' }}>●</span>{goal.title}</span>
+                          <span>{goal.progress || ''}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                   {/* Completed Tasks */}
                   <div>
                     <div className="font-semibold mb-2">Completed Tasks:</div>
                     <div className="flex flex-col gap-2">
-                      <div className="rounded-lg px-2 py-1 flex justify-between items-center" style={{ backgroundColor: '#e0f2fe', color: '#222', fontSize: '1em', width: '80%' }}>
-                        <span className="flex items-center"><span className="mr-2" style={{ color: '#3b82f6', fontSize: '1.2em' }}>●</span>Finish CSE321 Slide #4</span>
-                        <span className="ml-2"><span className="inline-block w-6 h-6 rounded-full bg-success text-white flex items-center justify-center">&#10003;</span></span>
-                      </div>
-                      <div className="rounded-lg px-2 py-1 flex justify-between items-center" style={{ backgroundColor: '#e0f2fe', color: '#222', fontSize: '1em', width: '80%' }}>
-                        <span className="flex items-center"><span className="mr-2" style={{ color: '#3b82f6', fontSize: '1.2em' }}>●</span>Watch "Uthshob" with friends</span>
-                        <span className="ml-2"><span className="inline-block w-6 h-6 rounded-full bg-success text-white flex items-center justify-center">&#10003;</span></span>
-                      </div>
+                      {completedGoals.length === 0 && <div className="text-xs text-base-content/60">No completed tasks this week.</div>}
+                      {completedGoals.map(goal => (
+                        <div key={goal._id} className="rounded-lg px-2 py-1 flex justify-between items-center" style={{ backgroundColor: '#e0f2fe', color: '#222', fontSize: '1em', width: '80%' }}>
+                          <span className="flex items-center"><span className="mr-2" style={{ color: '#3b82f6', fontSize: '1.2em' }}>●</span>{goal.title}</span>
+                          <span className="ml-2"><span className="inline-block w-6 h-6 rounded-full bg-success text-white flex items-center justify-center">&#10003;</span></span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
