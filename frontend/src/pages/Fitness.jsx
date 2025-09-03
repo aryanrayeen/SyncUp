@@ -90,7 +90,6 @@ const Fitness = () => {
         <div className="card bg-base-200 shadow-lg p-4 flex flex-col justify-center items-start">
           <div className="font-semibold text-base-content mb-1">Current Weight</div>
           <div className="text-2xl font-bold mb-1">{currentWeight} kg</div>
-          <div className={`text-sm font-semibold ${weightChangeColor}`}>{weightChange > 0 ? '+' : ''}{weightChange} kg {weightChange > 0 ? 'gained' : weightChange < 0 ? 'lost' : ''}</div>
         </div>
         {/* ...other dashboard cards... */}
       </div>

@@ -31,12 +31,24 @@ async function fetchWeekTasks(weekStart, setDayTasks) {
 export default function useDayTasks() {
   const [dayTasks, setDayTasks] = useState({});
 
-  // Load current week tasks on mount
+  // Load all tasks for the user on mount
   useEffect(() => {
-    const today = new Date();
-    const dayOfWeek = today.getUTCDay();
-    const weekStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - dayOfWeek));
-    fetchWeekTasks(weekStart, setDayTasks);
+    async function fetchAllTasks() {
+      try {
+        const res = await api.get('/day-tasks/all');
+        // Convert array of tasks [{date, pending, completed}] to { [date]: {pending, completed} }
+        const tasksObj = {};
+        if (Array.isArray(res.data)) {
+          res.data.forEach(t => {
+            tasksObj[t.date] = { pending: t.pending || [], completed: t.completed || [] };
+          });
+        }
+        setDayTasks(tasksObj);
+      } catch (err) {
+        setDayTasks({});
+      }
+    }
+    fetchAllTasks();
   }, []);
 
   // Add, complete, uncomplete, delete helpers (all call API)

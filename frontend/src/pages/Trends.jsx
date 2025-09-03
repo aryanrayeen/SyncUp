@@ -11,7 +11,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { TrendingUp, TrendingDown, Activity } from 'lucide-react';
+import { TrendingUp, TrendingDown, Activity, Scale } from 'lucide-react';
 import Calendar from 'react-calendar';
 import { useFitnessStore } from '../store/fitnessStore';
 
@@ -398,6 +398,27 @@ function PendingCompletedSection() {
 // --- End of PendingCompletedSection, start of Trends component ---
 const Trends = () => {
   const { userInfo, fetchUserInfo, isLoading, error, getBMICategory, weightHistory, fetchWeightHistory } = useFitnessStore();
+  const { dayTasks } = useDayTasks();
+  const [monthCalories, setMonthCalories] = useState(0);
+
+  // Dynamically update Calories Consumed this Month when dayTasks change
+  useEffect(() => {
+    const now = new Date();
+    const year = now.getUTCFullYear();
+    const month = now.getUTCMonth();
+    let totalCalories = 0;
+    if (dayTasks) {
+      Object.keys(dayTasks).forEach(dateStr => {
+        const d = new Date(dateStr);
+        if (d.getUTCFullYear() === year && d.getUTCMonth() === month) {
+          totalCalories += dayTasks[dateStr].completed
+            .filter(t => t.type === 'meal' && t.calories)
+            .reduce((sum, t) => sum + t.calories, 0);
+        }
+      });
+    }
+    setMonthCalories(totalCalories);
+  }, [dayTasks]);
   useEffect(() => {
     fetchWeightHistory();
   }, [fetchWeightHistory]);
@@ -541,22 +562,12 @@ const Trends = () => {
           <div className="card-body p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs sm:text-sm opacity-70">Weight Progress</p>
-                <p
-                  className={`text-lg sm:text-xl lg:text-2xl font-bold ${
-                    metrics.weightProgress.includes('-')
-                      ? 'text-success'
-                      : 'text-warning'
-                  }`}
-                >
-                  {metrics.weightProgress}
+                <p className="text-xs sm:text-sm opacity-70">Current Weight</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-primary">
+                  {userInfo?.weight ? `${userInfo.weight} kg` : 'N/A'}
                 </p>
               </div>
-              {metrics.weightProgress.includes('-') ? (
-                <TrendingDown className="w-6 h-6 sm:w-8 sm:h-8 text-success" />
-              ) : (
-                <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-warning" />
-              )}
+              <Scale className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
             </div>
           </div>
         </div>
@@ -565,8 +576,8 @@ const Trends = () => {
           <div className="card-body p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs sm:text-sm opacity-70">Daily Calories Target</p>
-                <p className="text-lg sm:text-xl lg:text-2xl font-bold">{metrics.avgCalories}</p>
+                <p className="text-xs sm:text-sm opacity-70">Calories Consumed this Month</p>
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-success">{monthCalories} cal</p>
               </div>
               <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
             </div>

@@ -38,6 +38,7 @@ app.use(cookieParser());
 
 // Routes
 app.use("/api/fitness", fitnessRoutes);
+app.use("/api/day-tasks", dayTaskRoutes);
 app.use("/api/finance", financeRoutes);
 app.use("/api/goals", goalRoutes);
 app.use("/api/auth", authRoutes);
