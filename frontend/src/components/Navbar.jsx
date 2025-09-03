@@ -1,17 +1,35 @@
 import { motion } from "framer-motion";
 import { useAuthStore } from "../store/authStore";
+import { useNotificationStore } from "../store/notificationStore";
 import { LogOut, User, Search, Bell } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import NotificationDropdown from "./NotificationDropdown";
 
 const Navbar = () => {
 	const { user, logout } = useAuthStore();
+	const { unreadCount, requestNotificationPermission } = useNotificationStore();
+	const [showNotifications, setShowNotifications] = useState(false);
 
 	// Debug: Log user data to console
 	console.log('Navbar - Current user:', user);
 	console.log('Navbar - Profile picture:', user?.profilePicture ? 'Present' : 'Not present');
 
+	// Request notification permission on component mount
+	useEffect(() => {
+		requestNotificationPermission();
+	}, [requestNotificationPermission]);
+
 	const handleLogout = () => {
 		logout();
+	};
+
+	const toggleNotifications = () => {
+		setShowNotifications(!showNotifications);
+	};
+
+	const closeNotifications = () => {
+		setShowNotifications(false);
 	};
 
 	return (
@@ -22,12 +40,27 @@ const Navbar = () => {
 			
 			{/* Notifications */}
 			<div className="flex-none gap-2">
-				<button className="btn btn-ghost btn-circle">
-					<div className="indicator">
-						<Bell className="w-5 h-5" />
-						<span className="badge badge-xs badge-primary indicator-item"></span>
-					</div>
-				</button>
+				<div className="relative">
+					<button 
+						className="btn btn-ghost btn-circle"
+						onClick={toggleNotifications}
+					>
+						<div className="indicator">
+							<Bell className="w-5 h-5" />
+							{unreadCount > 0 && (
+								<span className="badge badge-xs badge-primary indicator-item">
+									{unreadCount > 99 ? '99+' : unreadCount}
+								</span>
+							)}
+						</div>
+					</button>
+					
+					<NotificationDropdown 
+						isOpen={showNotifications}
+						onClose={closeNotifications}
+					/>
+				</div>
+				
 				{/* User Profile Dropdown */}
 				<div className="dropdown dropdown-end">
 					<div tabIndex={0} role="button" className="btn btn-ghost btn-circle flex items-center justify-center">

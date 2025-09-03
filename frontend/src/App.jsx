@@ -17,6 +17,7 @@ import Wellness from './pages/Wellness'
 import Workouts from './pages/Workouts'
 import Fitness from './pages/Fitness'
 import ProtectedRoute from './components/ProtectedRoute'
+import AchievementChecker from './components/AchievementChecker'
 import { Toaster } from "react-hot-toast";
 import ChatBot from "./components/ChatBot";
 import { useAuthStore } from "./store/authStore";
@@ -43,6 +44,8 @@ function App() {
 
     return (
         <div data-theme="acid" className="min-h-screen bg-base-100">
+            {/* Achievement checker - monitors for new achievements */}
+            <AchievementChecker />
             <ChatBot />
             <Routes>
                 {/* Auth Routes */}

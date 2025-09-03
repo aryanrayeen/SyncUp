@@ -75,6 +75,11 @@ export const useFinanceStore = create((set, get) => ({
         isLoading: false
       }));
       
+      // Dispatch transaction event for achievement checking
+      window.dispatchEvent(new CustomEvent('transactionAdded', { 
+        detail: { transaction: newTransaction } 
+      }));
+      
       return newTransaction;
     } catch (error) {
       console.error('Error adding transaction:', error);

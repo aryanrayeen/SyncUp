@@ -102,6 +102,13 @@ export const useGoalsStore = create((set, get) => ({
       };
 
       await get().updateGoal(goalId, updates);
+      
+      // Dispatch goal completion event for achievement checking
+      if (!goal.completed) {
+        window.dispatchEvent(new CustomEvent('goalCompleted', { 
+          detail: { goalId, goal: { ...goal, ...updates } } 
+        }));
+      }
     } catch (error) {
       console.error('Error toggling goal:', error);
     }
