@@ -1,4 +1,5 @@
 import chatbotRoutes from "./routes/chatbot.route.js";
+import publicRoutes from "./routes/public.route.js";
 import achievementRoutes from "../routes/achievement.route.js";
 import express from "express";
 import { connectDB } from "./config/db.js";
@@ -36,6 +37,13 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
+// More permissive CORS for public API endpoints
+app.use("/api/public", cors({
+  origin: "*", // Allow all origins for public API
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
 // Routes
 app.use("/api/fitness", fitnessRoutes);
 app.use("/api/day-tasks", dayTaskRoutes);
@@ -46,7 +54,9 @@ app.use("/api/user-info", userInfoRoutes);
 app.use("/api/chatbot", chatbotRoutes);
 app.use("/api/workouts", workoutRoutes);
 
-app.use("/api/day-tasks", dayTaskRoutes); // Register dayTask routes
+// Public API routes (no authentication required)
+app.use("/api/public", publicRoutes);
+
 app.use("/api/achievements", achievementRoutes);
 
 import weightRoutes from "./routes/weight.route.js";
