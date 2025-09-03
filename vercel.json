@@ -1,9 +1,13 @@
 {
   "version": 2,
-  "buildCommand": "bash build.sh",
-  "outputDirectory": "frontend/dist",
-  "installCommand": "npm install",
   "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    },
     {
       "src": "backend/src/server.js",
       "use": "@vercel/node"
@@ -16,8 +20,11 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "frontend/dist/index.html"
     }
+  ],
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/" }
   ],
   "env": {
     "NODE_ENV": "production"
