@@ -147,27 +147,6 @@ const WeeklySummary = () => {
                                   </g>
                                 );
                               })}
-                              {/* Bars for each day (S, M, T, W, T, F, S) - dynamic */}
-                              {barHeights.map((barHeight, i) => {
-                                const yStart = 110;
-                                const yEnd = 20;
-                                const maxBarHeight = yStart - yEnd;
-                                // Cap bar height to maxBarHeight
-                                const cappedBarHeight = Math.min(barHeight, maxBarHeight);
-                                return (
-                                  <rect
-                                    key={i}
-                                    x={58 + i * 32}
-                                    y={yStart - cappedBarHeight}
-                                    width="18"
-                                    height={cappedBarHeight}
-                                    fill="#22c55e"
-                                    style={{ cursor: 'pointer' }}
-                                    onMouseEnter={() => setHoveredBar(i)}
-                                    onMouseLeave={() => setHoveredBar(null)}
-                                  />
-                                );
-                              })}
                               {/* Day labels */}
                               <text x="67" y="125" textAnchor="middle" fontSize="13">S</text>
                               <text x="99" y="125" textAnchor="middle" fontSize="13">M</text>
@@ -244,24 +223,53 @@ const WeeklySummary = () => {
                 </div>
                 {/* Exercises Done (Mini Bar Charts) */}
                 <div className="mt-8">
-                  <div className="font-semibold mb-2">Exercises Done:</div>
-                  <div className="grid grid-cols-5 gap-4">
-                    {['Chest', 'Biceps', 'Triceps', 'Shoulders', 'Legs'].map((muscle, idx) => (
-                      <div key={muscle} className="flex flex-col items-center">
-                        <svg width="80" height="60" viewBox="0 0 80 60">
-                          {/* Y axis lines and labels */}
-                          <line x1="20" y1="15" x2="75" y2="15" stroke="#ccc" />
-                          <line x1="20" y1="35" x2="75" y2="35" stroke="#ccc" />
-                          <line x1="20" y1="55" x2="75" y2="55" stroke="#ccc" />
-                          <text x="2" y="20" fontSize="10" className="sm:font-normal font-thin">5</text>
-                          <text x="2" y="40" fontSize="10" className="sm:font-normal font-thin">3</text>
-                          <text x="2" y="58" fontSize="10" className="sm:font-normal font-thin">1</text>
-                          {/* Bar for exercises done (example: 3 workouts) */}
-                          <rect x="35" y="35" width="20" height="20" fill="#22c55e" />
-                        </svg>
-                        <span className="mt-1 text-xs">{muscle}</span>
-                      </div>
-                    ))}
+                  <div className="font-semibold mb-2">Workouts & Meal Plans This Week:</div>
+                  <div className="grid grid-cols-4 gap-2 items-center mb-2">
+                    <span className="text-xs font-semibold text-base-content/70">Name</span>
+                    <span className="text-xs font-semibold text-base-content/70">Type</span>
+                    <span className="text-xs font-semibold text-base-content/70 text-center">Pending</span>
+                    <span className="text-xs font-semibold text-base-content/70 text-center">Completed</span>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {(() => {
+                      // Gather all items for the week
+                      const weekDates = Array.from({ length: 7 }, (_, i) => {
+                        const d = new Date(weekStart);
+                        d.setUTCDate(weekStart.getUTCDate() + i);
+                        return formatDateUTC(d);
+                      });
+                      const allPending = [];
+                      const allCompleted = [];
+                      weekDates.forEach(dateStr => {
+                        const day = dayTasks[dateStr] || { pending: [], completed: [] };
+                        allPending.push(...day.pending);
+                        allCompleted.push(...day.completed);
+                      });
+                      // Get all unique items by id+type
+                      const allItemsMap = new Map();
+                      [...allPending, ...allCompleted].forEach(item => {
+                        allItemsMap.set(`${item.type}_${item.id}`, item);
+                      });
+                      // For each unique item, count pending and completed
+                      return Array.from(allItemsMap.values()).map(item => {
+                        const pendingCount = allPending.filter(i => i.id === item.id && i.type === item.type).length;
+                        const completedCount = allCompleted.filter(i => i.id === item.id && i.type === item.type).length;
+                        const maxCount = Math.max(pendingCount, completedCount, 1);
+                        const barMaxWidth = 100;
+                        return (
+                          <div key={`${item.type}_${item.id}`} className="grid grid-cols-4 gap-2 items-center">
+                            <div className="w-32 truncate text-xs font-semibold text-base-content/80">{item.name}</div>
+                            <div className="w-14 text-xs text-base-content/60">{item.type}</div>
+                            <div className="flex justify-center">
+                              <div style={{ width: `${(pendingCount / maxCount) * barMaxWidth}px`, height: 18, background: '#fbbf24', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, color: '#222', minWidth: 24 }} title={`Pending: ${pendingCount}`}>{pendingCount > 0 ? pendingCount : ''}</div>
+                            </div>
+                            <div className="flex justify-center">
+                              <div style={{ width: `${(completedCount / maxCount) * barMaxWidth}px`, height: 18, background: '#22c55e', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, color: '#fff', minWidth: 24 }} title={`Completed: ${completedCount}`}>{completedCount > 0 ? completedCount : ''}</div>
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
                   </div>
                 </div>
               </div>
@@ -303,7 +311,16 @@ const WeeklySummary = () => {
                     </div>
                     <div className="mb-2">Spent:</div>
                     <div className="w-full h-4 bg-base-300 rounded-full mb-2">
-                      <div className="h-4" style={{ width: `${Math.min(100, totalSpent / (monthlyBudget || 1) * 100)}%`, backgroundColor: '#ffe066', borderRadius: '9999px' }}></div>
+                      <div
+                        className="h-4 relative group cursor-pointer"
+                        style={{ width: `${Math.min(100, totalSpent / (monthlyBudget || 1) * 100)}%`, backgroundColor: '#f87171', borderRadius: '9999px' }}
+                      >
+                        <span
+                          className="absolute left-1/2 -translate-x-1/2 -top-8 bg-base-200 text-base-content text-xs px-2 py-1 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap"
+                        >
+                          {totalSpent.toLocaleString()} BDT/-
+                        </span>
+                      </div>
                     </div>
                     <div className="relative w-full flex mb-4 flex-wrap text-xs md:text-sm" style={{ height: '1.5em' }}>
                       <span className="absolute left-0 whitespace-nowrap" style={{ minWidth: '40px' }}>0 BDT/-</span>
@@ -314,47 +331,79 @@ const WeeklySummary = () => {
                     <div className="flex flex-col gap-2">
                       {recentWeekTx.length === 0 && <div className="text-xs text-base-content/60">No transactions this week.</div>}
                       {recentWeekTx.map(tx => (
-                        <div key={tx._id} className="rounded-lg px-4 py-2 grid grid-cols-3 items-center" style={{ backgroundColor: '#ffe066', color: '#222' }}>
+                        <div
+                          key={tx._id}
+                          className="rounded-lg px-4 py-2 grid grid-cols-3 items-center relative group"
+                          style={{ backgroundColor: '#ffe066', color: '#222' }}
+                        >
                           <span className="col-span-1 truncate">{tx.category || tx.description || tx.type}</span>
                           <span className="col-span-1 text-center">{new Date(tx.date).toLocaleDateString()}</span>
                           <span className="col-span-1 text-right">{tx.type === 'expense' ? '-' : '+'}{tx.amount} BDT/-</span>
+                          {/* Tooltip for more details */}
+                          <span
+                            className="absolute left-1/2 -translate-x-1/2 -top-12 bg-base-200 text-base-content text-xs px-3 py-2 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap"
+                            style={{ minWidth: '180px' }}
+                          >
+                            <div><span className="font-bold">Category:</span> {tx.category || 'N/A'}</div>
+                            <div><span className="font-bold">Description:</span> {tx.description || 'No description'}</div>
+                            <div><span className="font-bold">ID:</span> {tx._id}</div>
+                          </span>
                         </div>
                       ))}
                     </div>
                   </div>
                   <div className="flex flex-col justify-between">
                     <div>
-                      <div className="font-semibold mb-2">Daily Breakdown:</div>
-                      <svg width="100%" height="120" viewBox="0 0 300 120">
-                        <line x1="40" y1="20" x2="280" y2="20" stroke="#ccc" />
-                        <line x1="40" y1="50" x2="280" y2="50" stroke="#ccc" />
-                        <line x1="40" y1="80" x2="280" y2="80" stroke="#ccc" />
-                        {/* Y axis labels */}
-                        <text x="10" y="25" fontSize="12">2.2k</text>
-                        <text x="10" y="55" fontSize="12">2k</text>
-                        <text x="10" y="85" fontSize="12">1.8k</text>
-                        {/* Line chart points */}
-                        <polyline points="40,100 70,80 100,90 130,90 160,70 190,50 220,60 250,55 280,70" fill="none" stroke="#38bdf8" strokeWidth="3" />
-                        {/* Dots */}
-                        <circle cx="40" cy="100" r="4" fill="#38bdf8" />
-                        <circle cx="70" cy="80" r="4" fill="#38bdf8" />
-                        <circle cx="100" cy="90" r="4" fill="#38bdf8" />
-                        <circle cx="130" cy="90" r="4" fill="#38bdf8" />
-                        <circle cx="160" cy="70" r="4" fill="#38bdf8" />
-                        <circle cx="190" cy="50" r="4" fill="#38bdf8" />
-                        <circle cx="220" cy="60" r="4" fill="#38bdf8" />
-                        <circle cx="250" cy="55" r="4" fill="#38bdf8" />
-                        <circle cx="280" cy="70" r="4" fill="#38bdf8" />
-                        {/* Day labels */}
-                        <text x="40" y="115" textAnchor="middle" fontSize="12">S</text>
-                        <text x="100" y="115" textAnchor="middle" fontSize="12">T</text>
-                        <text x="130" y="115" textAnchor="middle" fontSize="12">W</text>
-                      </svg>
+                      <div className="flex items-end gap-4 h-28 w-full max-w-[320px] mx-auto">
+                        {Array.from({ length: 7 }).map((_, i) => {
+                          const earned = dailySaved[i];
+                          const spent = dailySpent[i];
+                          const max = Math.max(...dailySaved, ...dailySpent, 1);
+                          const barHeight = val => Math.round((val / max) * 70) + 18;
+                          return (
+                            <div key={i} className="flex flex-col items-center justify-end w-10 relative">
+                              {/* Earned bar with tooltip on hover */}
+                              <div
+                                className="group"
+                                style={{ height: barHeight(earned), width: 20, background: '#22c55e', borderRadius: '6px 6px 0 0', marginBottom: 2, position: 'relative' }}
+                              >
+                                {earned > 0 && (
+                                  <span
+                                    className="absolute left-1/2 -translate-x-1/2 -top-8 bg-base-200 text-base-content text-xs px-2 py-1 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap"
+                                  >
+                                    Earned: {earned.toLocaleString()} BDT/-
+                                  </span>
+                                )}
+                              </div>
+                              {/* Spent bar with tooltip on hover */}
+                              <div
+                                className="group"
+                                style={{ height: barHeight(spent), width: 20, background: '#f87171', borderRadius: '0 0 6px 6px', position: 'relative' }}
+                              >
+                                {spent > 0 && (
+                                  <span
+                                    className="absolute left-1/2 -translate-x-1/2 -bottom-8 bg-base-200 text-base-content text-xs px-2 py-1 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap"
+                                  >
+                                    Spent: {spent.toLocaleString()} BDT/-
+                                  </span>
+                                )}
+                              </div>
+                              {/* Net change label */}
+                              <span style={{ fontSize: 11, marginTop: 2, color: earned - spent >= 0 ? '#22c55e' : '#f87171', fontWeight: 600 }}>
+                                {earned - spent >= 0 ? '+' : ''}{earned - spent}
+                              </span>
+                              {/* Day label */}
+                              <span style={{ fontSize: 13, marginTop: 2 }}>{['S','M','T','W','T','F','S'][i]}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="font-semibold mt-4 mb-2 text-center">Daily Earned vs. Spent</div>
                     </div>
                     <div className="mt-8">
                       <div className="font-semibold mb-2">Budget:</div>
                       <div className="bg-base-300 rounded-lg shadow px-6 py-4 text-center text-3xl font-bold">
-                        1625 <span className="text-base font-normal">/ 2500 BDT/-</span>
+                        {totalSpent?.toLocaleString()} <span className="text-base font-normal">/ {monthlyBudget?.toLocaleString()} BDT/-</span>
                       </div>
                     </div>
                   </div>
