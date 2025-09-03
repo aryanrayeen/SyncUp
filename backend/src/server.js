@@ -17,9 +17,19 @@ import mealPlanRoutes from "./routes/mealPlan.route.js";
 import dayTaskRoutes from "../routes/dayTask.route.js"; // Import dayTask routes
 
 import FoodItem from "./model/FoodItem.js";
+import path from "path";
+import { fileURLToPath } from "url";
 
-// Load environment variables
-dotenv.config();
+// Get the directory name for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables from backend root directory
+const envPath = path.join(__dirname, '..', '.env');
+console.log('Loading .env from:', envPath);
+dotenv.config({ path: envPath });
+console.log('MONGO_URI loaded:', process.env.MONGO_URI ? 'Yes' : 'No');
+console.log('MONGO_URI value:', process.env.MONGO_URI);
 
 // Initialize app
 const app = express();
@@ -37,8 +47,18 @@ app.use(
         return callback(null, true);
       }
       
-      // For production, you can add specific origins here
-      callback(null, true); // Allow all for now
+      // Allow Vercel deployments and custom domains
+      if (origin.includes('vercel.app') || origin.includes('.vercel.app')) {
+        return callback(null, true);
+      }
+      
+      // Add your custom domain here when you have one
+      // if (origin === 'https://yourdomain.com') {
+      //   return callback(null, true);
+      // }
+      
+      // For production, allow all for now (change this for security)
+      callback(null, true);
     },
     credentials: true, // allow sending cookies
   })
