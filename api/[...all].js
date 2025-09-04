@@ -1,4 +1,4 @@
-// Vercel serverless function - SIMPLIFIED VERSION
+// Vercel catch-all API function
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -24,7 +24,9 @@ app.get('/', (req, res) => {
     message: 'SyncUp Backend API is running!', 
     status: 'success',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    path: req.path,
+    url: req.url
   });
 });
 
@@ -34,7 +36,7 @@ app.get('/api', (req, res) => {
     status: 'success',
     endpoints: [
       '/api/auth',
-      '/api/public',
+      '/api/public', 
       '/api/fitness',
       '/api/goals',
       '/api/chatbot'
@@ -50,10 +52,27 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Simple test route
 app.get('/test', (req, res) => {
-  res.json({ message: 'Test endpoint working!' });
+  res.json({ 
+    message: 'Test endpoint working!',
+    path: req.path,
+    url: req.url,
+    query: req.query
+  });
 });
 
-// Export for Vercel
-export default app;
+// Catch all other routes
+app.use('*', (req, res) => {
+  res.json({
+    message: 'Route not found',
+    path: req.path,
+    url: req.url,
+    method: req.method,
+    availableRoutes: ['/', '/api', '/health', '/test']
+  });
+});
+
+// Export handler for Vercel
+export default (req, res) => {
+  return app(req, res);
+};
