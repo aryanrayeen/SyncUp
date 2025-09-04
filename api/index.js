@@ -76,8 +76,24 @@ app.get("/", async (req, res) => {
   });
 });
 
+// Catch all for undefined routes
+app.use("*", (req, res) => {
+  res.status(404).json({ 
+    error: "Route not found", 
+    path: req.originalUrl 
+  });
+});
+
 // Export for Vercel
 export default async function handler(req, res) {
-  await ensureDbConnection();
-  return app(req, res);
+  try {
+    await ensureDbConnection();
+    return app(req, res);
+  } catch (error) {
+    console.error("Handler error:", error);
+    return res.status(500).json({ 
+      error: "Internal server error",
+      message: error.message 
+    });
+  }
 }
