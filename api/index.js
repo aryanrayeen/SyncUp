@@ -1,4 +1,3 @@
-// Vercel API function that serves your backend
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -38,20 +37,6 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// Connect to database on cold start
-let dbConnected = false;
-async function ensureDbConnection() {
-  if (!dbConnected) {
-    try {
-      await connectDB();
-      dbConnected = true;
-      console.log("Database connected");
-    } catch (error) {
-      console.error("Database connection failed:", error);
-    }
-  }
-}
-
 // Add all your existing routes
 app.use("/auth", authRoutes);
 app.use("/public", publicRoutes);
@@ -68,7 +53,6 @@ app.use("/achievements", achievementRoutes);
 
 // Health check
 app.get("/", async (req, res) => {
-  await ensureDbConnection();
   res.json({ 
     message: "SyncUp API is running!",
     status: "success",
@@ -84,10 +68,31 @@ app.use("*", (req, res) => {
   });
 });
 
-// Export for Vercel
+// Connect to database once
+let isConnected = false;
+
 export default async function handler(req, res) {
+  // Set CORS headers manually for Vercel
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', 'https://sync-up-v2.vercel.app');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
   try {
-    await ensureDbConnection();
+    // Connect to database if not already connected
+    if (!isConnected) {
+      await connectDB();
+      isConnected = true;
+      console.log("Database connected in serverless function");
+    }
+    
+    // Handle the request with Express app
     return app(req, res);
   } catch (error) {
     console.error("Handler error:", error);
