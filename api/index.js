@@ -1,25 +1,23 @@
-// Vercel serverless function entry point
-import express from "express";
-import { connectDB } from "../backend/src/config/db.js";
-import dotenv from "dotenv";
-import cors from "cors";
-import cookieParser from "cookie-parser";
-
-// Import routes
+// Vercel serverless function - adapted from backend/src/server.js
 import chatbotRoutes from "../backend/src/routes/chatbot.route.js";
 import publicRoutes from "../backend/src/routes/public.route.js";
 import achievementRoutes from "../backend/src/routes/achievement.route.js";
+import express from "express";
+import { connectDB } from "../backend/src/config/db.js";
+import dotenv from "dotenv";
 import fitnessRoutes from "../backend/src/routes/fitness.route.js";
 import financeRoutes from "../backend/src/routes/finance.route.js";
 import goalRoutes from "../backend/src/routes/goal.route.js";
 import authRoutes from "../backend/src/routes/auth.route.js";
 import userInfoRoutes from "../backend/src/routes/userInfo.route.js";
 import workoutRoutes from "../backend/src/routes/workout.route.js";
+import cookieParser from "cookie-parser";
+import cors from "cors";
+
 import mealPlanRoutes from "../backend/src/routes/mealPlan.route.js";
 import dayTaskRoutes from "../backend/src/routes/dayTask.route.js";
 import weightRoutes from "../backend/src/routes/weight.route.js";
 
-// Import models
 import FoodItem from "../backend/src/model/FoodItem.js";
 
 // Load environment variables
@@ -28,20 +26,27 @@ dotenv.config();
 // Initialize app
 const app = express();
 
-// CORS Middleware
+// CORS Middleware (must be before routes)
 app.use(
   cors({
     origin: function (origin, callback) {
+      // Allow requests with no origin (mobile apps, curl, etc.)
       if (!origin) return callback(null, true);
+      
+      // Allow all localhost and 127.0.0.1 origins for development
       if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
         return callback(null, true);
       }
+      
+      // Allow Vercel deployments and custom domains
       if (origin.includes('vercel.app') || origin.includes('.vercel.app')) {
         return callback(null, true);
       }
+      
+      // For production, allow all for now (change this for security)
       callback(null, true);
     },
-    credentials: true,
+    credentials: true, // allow sending cookies
   })
 );
 
@@ -49,7 +54,7 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-// Test endpoints
+// Test endpoint for deployment verification
 app.get('/', (req, res) => {
   res.json({ 
     message: 'SyncUp Backend API is running!', 
@@ -73,6 +78,7 @@ app.get('/api', (req, res) => {
   });
 });
 
+// Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'healthy',
@@ -81,15 +87,15 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Public API routes (no authentication required)
+// More permissive CORS for public API endpoints
 app.use("/api/public", cors({
-  origin: true,
+  origin: true, // Allow all origins for public API
   methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: false
+  credentials: false // Public API doesn't need credentials
 }));
 
-// Routes
+// Routes (same as your original server.js)
 app.use("/api/fitness", fitnessRoutes);
 app.use("/api/day-tasks", dayTaskRoutes);
 app.use("/api/finance", financeRoutes);
@@ -98,12 +104,17 @@ app.use("/api/auth", authRoutes);
 app.use("/api/user-info", userInfoRoutes);
 app.use("/api/chatbot", chatbotRoutes);
 app.use("/api/workouts", workoutRoutes);
+
+// Public API routes (no authentication required)
 app.use("/api/public", publicRoutes);
+
 app.use("/api/achievements", achievementRoutes);
 app.use("/api/weight", weightRoutes);
+
+// Meal Plan routes
 app.use("/api/meal-plans", mealPlanRoutes);
 
-// Auto-seed food items function
+// Auto-seed food items if collection is empty (same as your original)
 const defaultFoodItems = [
   { name: "Brown Rice", category: "Carbs", calories: 111, protein: 3 },
   { name: "Oats", category: "Carbs", calories: 68, protein: 2 },
@@ -144,7 +155,7 @@ async function autoSeedFoodItems() {
   }
 }
 
-// Connect to database
+// Database connection for serverless (connect on each request)
 let dbConnected = false;
 
 async function connectDatabase() {
@@ -160,11 +171,11 @@ async function connectDatabase() {
   }
 }
 
-// For Vercel serverless functions, we need to connect to DB on each request
+// Middleware to ensure DB connection on each request (serverless pattern)
 app.use(async (req, res, next) => {
   await connectDatabase();
   next();
 });
 
-// Export for Vercel
+// Export for Vercel (instead of app.listen())
 export default app;
