@@ -44,8 +44,13 @@ app.use(
         return callback(null, true);
       }
       
-      // Allow Vercel deployments and custom domains
-      if (origin.includes('vercel.app') || origin.includes('.vercel.app')) {
+      // Allow your Vercel frontend deployment
+      if (origin === 'https://sync-up-v2.vercel.app' || origin.includes('sync-up-v2.vercel.app')) {
+        return callback(null, true);
+      }
+      
+      // Allow any Vercel deployments during development
+      if (origin.includes('vercel.app')) {
         return callback(null, true);
       }
       
@@ -54,8 +59,13 @@ app.use(
       //   return callback(null, true);
       // }
       
-      // For production, allow all for now (change this for security)
-      callback(null, true);
+      // For development, allow all for now
+      if (process.env.NODE_ENV !== 'production') {
+        return callback(null, true);
+      }
+      
+      // Reject other origins in production
+      callback(new Error('Not allowed by CORS'));
     },
     credentials: true, // allow sending cookies
   })
@@ -170,14 +180,12 @@ async function startServer() {
     await connectDB();
     await autoSeedFoodItems();
     
-    // For Vercel, we export the app instead of listening
-    if (process.env.NODE_ENV === 'production') {
-      console.log('Server configured for production (Vercel)');
-    } else {
-      app.listen(PORT, () => {
-        console.log(`Server started on PORT: ${PORT}`);
-      });
-    }
+    // Always start the server for Render deployment
+    app.listen(PORT, () => {
+      console.log(`Server started on PORT: ${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`Database connected: ${process.env.MONGO_URI ? 'Yes' : 'No'}`);
+    });
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);
@@ -186,5 +194,5 @@ async function startServer() {
 
 startServer();
 
-// Export the app for Vercel
+// Export the app for potential future use
 export default app;

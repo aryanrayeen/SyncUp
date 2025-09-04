@@ -4,7 +4,7 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: import.meta.env.MODE === "development" 
     ? "http://localhost:3004/api" 
-    : "https://sync-up-v2.vercel.app/api",
+    : (import.meta.env.VITE_BACKEND_URL || "https://syncup-3xw3.onrender.com/api"),
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
