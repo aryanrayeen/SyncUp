@@ -1,11 +1,10 @@
 {
   "name": "syncup",
   "version": "1.0.0",
-  "type": "module",
   "private": true,
   "scripts": {
-    "build": "cd frontend && npm install && npm run build",
-    "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\""
+    "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
+    "build": "echo 'Using Vercel builds configuration'"
   },
   "dependencies": {
     "@google/genai": "^1.16.0",
