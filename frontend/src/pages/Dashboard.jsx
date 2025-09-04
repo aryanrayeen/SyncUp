@@ -368,7 +368,7 @@ const Dashboard = () => {
         </div>
 
         <div className="stat bg-base-200 rounded-lg shadow p-4 min-h-0">
-          <div className="stat-figure text-red-500 flex-shrink-0">
+          <div className="stat-figure text-red-600 flex-shrink-0">
             <Heart size={20} className="sm:w-6 sm:h-6" />
           </div>
             <div className="stat-title text-xs sm:text-sm truncate">Calories Consumed this week</div>
