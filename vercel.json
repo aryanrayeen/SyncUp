@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd frontend && npm run build",
+  "buildCommand": "npm run build",
   "outputDirectory": "frontend/dist",
   "functions": {
     "api/index.js": {
@@ -13,7 +13,7 @@
     },
     {
       "source": "/(.*)",
-      "destination": "/frontend/dist/index.html"
+      "destination": "/index.html"
     }
   ]
 }
