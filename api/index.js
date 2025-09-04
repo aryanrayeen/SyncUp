@@ -28,7 +28,9 @@ const app = express();
 
 // CORS for your frontend
 app.use(cors({
-  origin: ["https://sync-up-v2.vercel.app", "http://localhost:5173"],
+  origin: process.env.NODE_ENV === 'production' 
+    ? [process.env.FRONTEND_URL || "https://sync-up-v2.vercel.app"]
+    : ["http://localhost:5173", "http://localhost:3000"],
   credentials: true,
 }));
 
