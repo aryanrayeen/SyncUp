@@ -54,11 +54,11 @@ The application is deployed on Vercel with:
 
 This project is developed and maintained by:
 
-| Name | Role | GitHub |
-|------|------|--------|
-| **Sajid Aryan Sami** | Full Stack Developer | [@sajidaryansami](https://github.com/sajidaryansami) |
-| **Aryan Rayeen Rahman** | Full Stack Developer | [@aryanrayeen](https://github.com/aryanrayeen) |
-| **Vivian Ananda** | Full Stack Developer | [@vivianananda](https://github.com/vivianananda) |
+| Name | GitHub |
+|------|--------|
+| **Sajid Aryan Sami** | [@sajidaryansami](https://github.com/sajid-aryan) |
+| **Aryan Rayeen Rahman** | [@aryanrayeen](https://github.com/aryanrayeen) |
+| **Vivian Ananda** | [@vivianananda](https://github.com/vivianananda) |
 
 ## 📝 License
 
