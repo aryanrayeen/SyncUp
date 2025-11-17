@@ -24,9 +24,13 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables - Vercel handles this automatically
+// Load environment variables - Render handles this automatically
 dotenv.config();
-console.log('MONGO_URI loaded:', process.env.MONGO_URI ? 'Yes' : 'No');
+console.log('Environment check:');
+console.log('- NODE_ENV:', process.env.NODE_ENV);
+console.log('- PORT:', process.env.PORT);
+console.log('- MONGO_URI loaded:', process.env.MONGO_URI ? 'Yes' : 'No');
+console.log('- JWT_SECRET loaded:', process.env.JWT_SECRET ? 'Yes' : 'No');
 
 // Initialize app
 const app = express();
@@ -44,8 +48,13 @@ app.use(
         return callback(null, true);
       }
       
-      // Allow Vercel deployments and custom domains
-      if (origin.includes('vercel.app') || origin.includes('.vercel.app')) {
+      // Allow your Vercel frontend deployment
+      if (origin === 'https://sync-up-v2.vercel.app' || origin.includes('sync-up-v2.vercel.app')) {
+        return callback(null, true);
+      }
+      
+      // Allow any Vercel deployments during development
+      if (origin.includes('vercel.app')) {
         return callback(null, true);
       }
       
@@ -54,8 +63,13 @@ app.use(
       //   return callback(null, true);
       // }
       
-      // For production, allow all for now (change this for security)
-      callback(null, true);
+      // For development, allow all for now
+      if (process.env.NODE_ENV !== 'production') {
+        return callback(null, true);
+      }
+      
+      // Reject other origins in production
+      callback(new Error('Not allowed by CORS'));
     },
     credentials: true, // allow sending cookies
   })
@@ -167,24 +181,46 @@ async function autoSeedFoodItems() {
 // Connect to DB and start server
 async function startServer() {
   try {
-    await connectDB();
+    console.log('Starting server...');
+    
+    // Connect to database with timeout
+    console.log('Connecting to database...');
+    await Promise.race([
+      connectDB(),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database connection timeout')), 30000)
+      )
+    ]);
+    console.log('Database connected successfully!');
+    
+    // Seed food items
     await autoSeedFoodItems();
     
-    // For Vercel, we export the app instead of listening
-    if (process.env.NODE_ENV === 'production') {
-      console.log('Server configured for production (Vercel)');
-    } else {
-      app.listen(PORT, () => {
-        console.log(`Server started on PORT: ${PORT}`);
-      });
-    }
+    // Always start the server for Render deployment
+    const server = app.listen(PORT, '0.0.0.0', () => {
+      console.log(`✅ Server started successfully on PORT: ${PORT}`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🍃 Database connected: ${process.env.MONGO_URI ? 'Yes' : 'No'}`);
+      console.log(`🚀 Server is ready to receive requests`);
+    });
+    
+    // Handle server errors
+    server.on('error', (error) => {
+      console.error('❌ Server error:', error);
+      process.exit(1);
+    });
+    
   } catch (error) {
-    console.error('Failed to start server:', error);
+    console.error('❌ Failed to start server:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack
+    });
     process.exit(1);
   }
 }
 
 startServer();
 
-// Export the app for Vercel
+// Export the app for potential future use
 export default app;
